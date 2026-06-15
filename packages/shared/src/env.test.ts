@@ -39,4 +39,15 @@ describe("parseEnv", () => {
     expect(env.EMAIL_PROVIDER).toBe("console");
     expect(env.STORAGE_PROVIDER).toBe("local");
   });
+
+  it("rejects a malformed APP_URL", () => {
+    expect(() => parseEnv({ ...validEnv, APP_URL: "not-a-url" })).toThrow(
+      /APP_URL/,
+    );
+  });
+
+  it("treats an empty-string optional var as absent", () => {
+    const env = parseEnv({ ...validEnv, TEST_DATABASE_URL: "" });
+    expect(env.TEST_DATABASE_URL).toBeUndefined();
+  });
 });

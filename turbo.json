@@ -10,6 +10,9 @@
     },
     "lint": {},
     "typecheck": {},
+    "format": {
+      "cache": false
+    },
     "dev": {
       "cache": false,
       "persistent": true

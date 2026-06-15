@@ -1,6 +1,15 @@
 import { z } from "zod";
 
 /**
+ * Wrap an optional schema so that empty-string values (common in `.env` files,
+ * e.g. `TEST_DATABASE_URL=`) are treated as absent rather than failing
+ * validation.
+ */
+function optionalNonEmpty<T extends z.ZodType>(schema: T) {
+  return z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
+}
+
+/**
  * Environment variable schema for the SaaS starter.
  *
  * Required vars must be present and non-empty. Provider selectors have sane
@@ -11,34 +20,34 @@ export const envSchema = z.object({
   // Required
   DATABASE_URL: z.string().min(1),
   AUTH_SECRET: z.string().min(1),
-  APP_URL: z.string().url(),
-  API_URL: z.string().url(),
+  APP_URL: z.url(),
+  API_URL: z.url(),
 
   // Provider selectors (with defaults)
   EMAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
   STORAGE_PROVIDER: z.enum(["local", "s3"]).default("local"),
 
   // Optional — test database
-  TEST_DATABASE_URL: z.string().min(1).optional(),
+  TEST_DATABASE_URL: optionalNonEmpty(z.string().min(1)),
 
   // Optional — email (Resend)
-  RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_API_KEY: optionalNonEmpty(z.string().min(1)),
 
   // Optional — storage (S3)
-  S3_REGION: z.string().min(1).optional(),
-  S3_BUCKET: z.string().min(1).optional(),
-  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
-  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
-  S3_ENDPOINT: z.string().min(1).optional(),
+  S3_REGION: optionalNonEmpty(z.string().min(1)),
+  S3_BUCKET: optionalNonEmpty(z.string().min(1)),
+  S3_ACCESS_KEY_ID: optionalNonEmpty(z.string().min(1)),
+  S3_SECRET_ACCESS_KEY: optionalNonEmpty(z.string().min(1)),
+  S3_ENDPOINT: optionalNonEmpty(z.string().min(1)),
 
   // Optional — OAuth
-  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
-  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
-  GITHUB_CLIENT_ID: z.string().min(1).optional(),
-  GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
+  GOOGLE_CLIENT_ID: optionalNonEmpty(z.string().min(1)),
+  GOOGLE_CLIENT_SECRET: optionalNonEmpty(z.string().min(1)),
+  GITHUB_CLIENT_ID: optionalNonEmpty(z.string().min(1)),
+  GITHUB_CLIENT_SECRET: optionalNonEmpty(z.string().min(1)),
 
   // Optional — observability
-  SENTRY_DSN: z.string().min(1).optional(),
+  SENTRY_DSN: optionalNonEmpty(z.string().min(1)),
 });
 
 export type Env = z.infer<typeof envSchema>;

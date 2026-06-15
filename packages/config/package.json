@@ -5,5 +5,9 @@
   "files": [
     "tsconfig.base.json",
     "biome.json"
-  ]
+  ],
+  "scripts": {
+    "lint": "biome check --config-path ./biome.json .",
+    "format": "biome check --write --config-path ./biome.json ."
+  }
 }
