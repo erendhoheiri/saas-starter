@@ -6,7 +6,9 @@ loadEnv();
 const env = parseEnv();
 
 export default defineConfig({
-  schema: "./src/schema/*",
+  // Match only schema modules; the `!(*.test)` extglob excludes test files so
+  // drizzle-kit doesn't try to load them as schema.
+  schema: "./src/schema/!(*.test).ts",
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
