@@ -11,16 +11,26 @@ export const app = new Hono();
 // --- Global middleware ---
 app.use(requestIdMiddleware());
 app.use(loggerMiddleware());
-app.use(
-  rateLimitMiddleware({
-    key: (c) => c.req.header("x-forwarded-for") ?? "unknown",
-    limit: 100,
-    windowMs: 60_000,
-  }),
-);
 
 // --- Global error handler ---
 app.onError(errorHandler());
+
+// Rate limiter is scoped to exclude health routes so infrastructure probes
+// (load balancers, Kubernetes liveness/readiness) are never rate-limited.
+// Assumes a trusted reverse proxy sets X-Forwarded-For. In untrusted
+// environments, clients can spoof this header — replace with socket-level
+// IP for production hardening.
+const rateLimiter = rateLimitMiddleware({
+  key: (c) => c.req.header("x-forwarded-for") ?? "unknown",
+  limit: 100,
+  windowMs: 60_000,
+});
+app.use(async (c, next) => {
+  if (c.req.path === "/health" || c.req.path === "/health/ready") {
+    return next();
+  }
+  return rateLimiter(c, next);
+});
 
 // --- Routes ---
 app.get("/health", (c) => {

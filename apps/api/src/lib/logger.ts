@@ -27,9 +27,12 @@ export const logger = {
 
 /**
  * Stub for capturing errors to an external service (e.g. Sentry).
- * TODO: replace console.error with actual Sentry.captureException(err) call.
+ * TODO: replace with actual Sentry.captureException(err) call.
  */
 export function captureError(err: unknown): void {
   // TODO: integrate Sentry — Sentry.captureException(err)
-  console.error("[captureError]", err);
+  logger.error({
+    msg: "[captureError]",
+    err: err instanceof Error ? { message: err.message, stack: err.stack } : err,
+  });
 }
