@@ -1,5 +1,5 @@
 export type { Auth } from "better-auth";
-export { auth } from "./server";
+export { auth, handler } from "./server";
 
 // Inferred session/user types derived from the configured auth instance.
 // Consumers (e.g. the API layer) import these instead of spelling out the
