@@ -118,11 +118,17 @@ export const auth = betterAuth({
           try {
             await auth.api.createOrganization({
               body: {
-                name: user.name,
+                name: user.name || (user.email ?? "").split("@")[0] || user.id,
                 slug: `personal-${user.id}`,
                 userId: user.id,
               },
             });
+            // NOTE: setActiveOrganization is intentionally NOT called here.
+            // There is no session context during the user.create hook, so
+            // activeOrganizationId cannot be set on the first session from
+            // this path. The auth middleware in Task 3.3 is responsible for
+            // resolving the personal org and setting activeOrganizationId on
+            // the user's first request.
           } catch (err) {
             // Non-fatal: log but don't block sign-up
             console.error(
