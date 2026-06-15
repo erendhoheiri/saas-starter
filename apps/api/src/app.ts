@@ -1,8 +1,20 @@
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { captureError } from "./lib/logger";
+import { errorHandler } from "./middleware/error";
+import { loggerMiddleware } from "./middleware/logger";
+import { requestIdMiddleware } from "./middleware/requestId";
 
 export const app = new Hono();
 
+// --- Global middleware ---
+app.use(requestIdMiddleware());
+app.use(loggerMiddleware());
+
+// --- Global error handler ---
+app.onError(errorHandler());
+
+// --- Routes ---
 app.get("/health", (c) => {
   return c.json({ status: "ok" });
 });
@@ -14,10 +26,11 @@ app.get("/health/ready", async (c) => {
     await db.execute(sql`SELECT 1`);
     return c.json({ status: "ok" });
   } catch (err) {
+    captureError(err);
     return c.json(
       {
         status: "error",
-        message: err instanceof Error ? err.message : String(err),
+        message: "Service unavailable",
       },
       503,
     );
