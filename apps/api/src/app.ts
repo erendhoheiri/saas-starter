@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { captureError } from "./lib/logger";
 import { errorHandler } from "./middleware/error";
 import { loggerMiddleware } from "./middleware/logger";
+import { rateLimitMiddleware } from "./middleware/rateLimit";
 import { requestIdMiddleware } from "./middleware/requestId";
 
 export const app = new Hono();
@@ -10,6 +11,13 @@ export const app = new Hono();
 // --- Global middleware ---
 app.use(requestIdMiddleware());
 app.use(loggerMiddleware());
+app.use(
+  rateLimitMiddleware({
+    key: (c) => c.req.header("x-forwarded-for") ?? "unknown",
+    limit: 100,
+    windowMs: 60_000,
+  }),
+);
 
 // --- Global error handler ---
 app.onError(errorHandler());
