@@ -9,7 +9,10 @@ import { dirname, join } from "node:path";
  * Bun auto-loads `.env` for scripts run via `bun run`, but `drizzle-kit`
  * executes under Node from `packages/db` and does not, so its config needs to
  * load the monorepo-root `.env` explicitly. This is a tiny dependency-free
- * `.env` parser sufficient for `KEY=value` lines.
+ * `.env` parser sufficient for the project's needs. It handles `KEY=value`
+ * lines, an optional leading `export ` prefix on keys, single- or double-quoted
+ * values (quotes preserve inline `#`), and strips inline `# comments` from
+ * unquoted values. It does not handle multi-line values or escape sequences.
  */
 export function loadEnv(startDir: string = process.cwd()): void {
   let dir = startDir;
@@ -32,14 +35,29 @@ function applyEnvFile(path: string): void {
     if (line === "" || line.startsWith("#")) continue;
     const eq = line.indexOf("=");
     if (eq === -1) continue;
-    const key = line.slice(0, eq).trim();
+    // Strip an optional `export ` prefix (e.g. `export KEY=value`).
+    const key = line
+      .slice(0, eq)
+      .trim()
+      .replace(/^export\s+/, "");
     if (key === "" || process.env[key] !== undefined) continue;
     let value = line.slice(eq + 1).trim();
+    const quote = value[0];
     if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
+      (quote === '"' || quote === "'") &&
+      value.length >= 2 &&
+      value.endsWith(quote)
     ) {
+      // Quoted value: take what's inside the matching quotes verbatim (an
+      // inline `#` inside quotes is part of the value, not a comment). The
+      // `length >= 2` guard avoids mis-handling a lone quote char.
       value = value.slice(1, -1);
+    } else {
+      // Unquoted value: strip a trailing inline `# comment` (must be preceded
+      // by whitespace so values like `a#b` are left intact), then trim.
+      const hash = value.search(/\s#/);
+      if (hash !== -1) value = value.slice(0, hash);
+      value = value.trim();
     }
     process.env[key] = value;
   }

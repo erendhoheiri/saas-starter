@@ -28,6 +28,25 @@ export async function withTestDb<T>(
     await migrate(db, {
       migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
     });
+    // The `note` table is a TEST-ONLY fixture (see src/test-fixtures/note.ts):
+    // it is deliberately absent from the shipped migrations, so create it here
+    // via raw DDL — mirroring the `tenantTable("note", ...)` shape — so the
+    // tenant-isolation test runs against a real table without polluting
+    // production migrations.
+    await db.execute(
+      sql.raw(`
+        CREATE TABLE IF NOT EXISTS "note" (
+          "organization_id" text NOT NULL,
+          "id" text PRIMARY KEY NOT NULL,
+          "title" text NOT NULL,
+          "body" text,
+          "created_at" timestamp DEFAULT now() NOT NULL,
+          "updated_at" timestamp DEFAULT now() NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS "note_organization_id_idx"
+          ON "note" USING btree ("organization_id");
+      `),
+    );
     await truncateAll(db);
     return await fn(db);
   } finally {

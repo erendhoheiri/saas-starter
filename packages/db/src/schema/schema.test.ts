@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
 import { scopedTo } from "../query";
+import { note } from "../test-fixtures/note";
 import { makeOrg, withTestDb } from "../test-helpers";
-import { note, organization } from "./index";
+import { organization } from "./index";
 
 describe("tenant isolation", () => {
   test("a query scoped to org A returns only org A's rows, never org B's", async () => {
