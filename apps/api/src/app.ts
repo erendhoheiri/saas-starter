@@ -32,6 +32,15 @@ app.use(async (c, next) => {
   return rateLimiter(c, next);
 });
 
+// --- Auth routes (Better Auth handles all /api/auth/* paths) ---
+// The import is lazy (inside the handler) for the same reason as the DB import
+// below: it avoids requiring AUTH_SECRET/DATABASE_URL at module load time,
+// which lets unit tests that mock @starter/db import app.ts safely.
+app.all("/api/auth/*", async (c) => {
+  const { handler } = await import("@starter/auth");
+  return handler(c.req.raw);
+});
+
 // --- Routes ---
 app.get("/health", (c) => {
   return c.json({ status: "ok" });
