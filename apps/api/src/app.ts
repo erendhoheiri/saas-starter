@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { captureError } from "./lib/logger";
 import { errorHandler } from "./middleware/error";
 import { loggerMiddleware } from "./middleware/logger";
@@ -7,6 +8,20 @@ import { rateLimitMiddleware } from "./middleware/rateLimit";
 import { requestIdMiddleware } from "./middleware/requestId";
 
 export const app = new Hono();
+
+// --- CORS ---
+// Must come before all other middleware so preflight OPTIONS requests are
+// handled and credentials (cookies) are allowed cross-origin in dev.
+app.use(
+  "*",
+  cors({
+    origin: process.env.APP_URL ?? "http://localhost:5173",
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    exposeHeaders: ["Set-Cookie"],
+    credentials: true,
+  }),
+);
 
 // --- Global middleware ---
 app.use(requestIdMiddleware());
