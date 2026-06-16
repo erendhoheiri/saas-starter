@@ -21,10 +21,15 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@starter/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useOrg } from "@/hooks/useOrg";
 import { queryClient } from "@/lib/query";
@@ -105,6 +110,7 @@ function OrgPage() {
   const {
     register: registerInvite,
     handleSubmit: handleInviteSubmit,
+    control: inviteControl,
     formState: { errors: inviteErrors, isSubmitting: inviteSubmitting },
     reset: resetInvite,
     setError: setInviteError,
@@ -339,13 +345,21 @@ function OrgPage() {
                   {inviteErrors.email.message}
                 </p>
               )}
-              <select
-                {...registerInvite("role")}
-                className="border rounded-md px-3 h-9 text-sm w-full bg-background"
-              >
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-              </select>
+              <Controller
+                name="role"
+                control={inviteControl}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="member">Member</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {inviteErrors.root && (
                 <p className="text-destructive text-sm">
                   {inviteErrors.root.message}
