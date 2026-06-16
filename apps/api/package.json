@@ -10,7 +10,7 @@
     "./routes": "./src/routes.ts"
   },
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
+    "dev": "bun run --env-file ../../.env --watch src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "test": "bun test --env-file ../../.env.test src/app.test.ts src/middleware/error.test.ts src/middleware/logger.test.ts src/middleware/rateLimit.test.ts src/middleware/requestId.test.ts src/lib/ && bun test --env-file ../../.env.test src/middleware/auth.test.ts && bun test --env-file ../../.env.test src/modules/",
     "test:mocked": "bun test src/__mocked_tests__/",
