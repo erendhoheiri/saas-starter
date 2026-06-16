@@ -21,7 +21,7 @@ describe("ConsoleEmailProvider", () => {
     spy.mockRestore();
 
     expect(writes.length).toBeGreaterThanOrEqual(1);
-    const payload = JSON.parse(writes[0]);
+    const payload = JSON.parse(writes[0] ?? "{}");
     expect(payload.to).toBe("hello@example.com");
     expect(payload.subject).toBe("Test Subject");
     expect(payload.html).toBe("<p>Hello</p>");
@@ -45,7 +45,7 @@ describe("ConsoleEmailProvider", () => {
     spy.mockRestore();
 
     expect(writes.length).toBeGreaterThanOrEqual(1);
-    const payload = JSON.parse(writes[0]);
+    const payload = JSON.parse(writes[0] ?? "{}");
     expect(payload.to).toBe("no-text@example.com");
   });
 });

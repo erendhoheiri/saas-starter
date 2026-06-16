@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+echo "Running pre-commit checks..."
+
+echo "→ Lint"
+bun run lint
+
+echo "→ Typecheck"
+bun run typecheck
+
+echo "✓ Pre-commit checks passed"

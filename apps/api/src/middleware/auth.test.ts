@@ -136,70 +136,56 @@ async function setActiveOrg(
 // ---------------------------------------------------------------------------
 
 describe("authMiddleware", () => {
-  it(
-    "returns 401 when no session cookie is present",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const app = await buildTestApp();
-        const res = await app.request("/probe/auth");
-        expect(res.status).toBe(401);
+  it("returns 401 when no session cookie is present", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const app = await buildTestApp();
+      const res = await app.request("/probe/auth");
+      expect(res.status).toBe(401);
+    });
+  }, 30_000);
+
+  it("returns 200 and populates c.get('user') when session cookie is valid", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const app = await buildTestApp();
+      const email = `auth-ok-${Date.now()}@example.com`;
+      const password = "Password1!";
+      const cookie = await signUp(app, email, password);
+
+      const res = await app.request("/probe/auth", {
+        headers: { Cookie: cookie },
       });
-    },
-    30_000,
-  );
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { userId: string; email: string };
+      expect(body.email).toBe(email);
+      expect(typeof body.userId).toBe("string");
+    });
+  }, 30_000);
 
-  it(
-    "returns 200 and populates c.get('user') when session cookie is valid",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const app = await buildTestApp();
-        const email = `auth-ok-${Date.now()}@example.com`;
-        const password = "Password1!";
-        const cookie = await signUp(app, email, password);
+  it("returns 401 for a banned user", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const { createDb, schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      const app = await buildTestApp();
+      const email = `banned-${Date.now()}@example.com`;
+      const password = "Password1!";
+      const cookie = await signUp(app, email, password);
 
-        const res = await app.request("/probe/auth", {
-          headers: { Cookie: cookie },
-        });
-        expect(res.status).toBe(200);
-        const body = (await res.json()) as { userId: string; email: string };
-        expect(body.email).toBe(email);
-        expect(typeof body.userId).toBe("string");
+      // Use the test db connection to ban the user.
+      const { db: testDb } = createDb(process.env.TEST_DATABASE_URL as string);
+      await testDb
+        .update(schema.user)
+        .set({ bannedAt: new Date() })
+        .where(eq(schema.user.email, email));
+
+      const res = await app.request("/probe/auth", {
+        headers: { Cookie: cookie },
       });
-    },
-    30_000,
-  );
-
-  it(
-    "returns 401 for a banned user",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const { createDb, schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        const app = await buildTestApp();
-        const email = `banned-${Date.now()}@example.com`;
-        const password = "Password1!";
-        const cookie = await signUp(app, email, password);
-
-        // Use the test db connection to ban the user.
-        const { db: testDb } = createDb(
-          process.env.TEST_DATABASE_URL as string,
-        );
-        await testDb
-          .update(schema.user)
-          .set({ bannedAt: new Date() })
-          .where(eq(schema.user.email, email));
-
-        const res = await app.request("/probe/auth", {
-          headers: { Cookie: cookie },
-        });
-        expect(res.status).toBe(401);
-      });
-    },
-    30_000,
-  );
+      expect(res.status).toBe(401);
+    });
+  }, 30_000);
 });
 
 // ---------------------------------------------------------------------------
@@ -207,149 +193,133 @@ describe("authMiddleware", () => {
 // ---------------------------------------------------------------------------
 
 describe("orgMiddleware", () => {
-  it(
-    "passes through without org context when activeOrganizationId is not set",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const app = await buildTestApp();
-        const email = `noorg-${Date.now()}@example.com`;
-        const password = "Password1!";
-        const cookie = await signUp(app, email, password);
+  it("passes through without org context when activeOrganizationId is not set", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const app = await buildTestApp();
+      const email = `noorg-${Date.now()}@example.com`;
+      const password = "Password1!";
+      const cookie = await signUp(app, email, password);
 
-        // No setActiveOrg call — session.activeOrganizationId is null.
-        // The org middleware should skip resolution and pass through.
-        const res = await app.request("/probe/org", {
-          headers: { Cookie: cookie },
-        });
-        // Not 403 — the middleware should not block when there's no active org.
-        expect(res.status).not.toBe(403);
-        // The probe returns null org fields when no active org is set.
-        expect(res.status).toBe(200);
-        const body = (await res.json()) as { orgId: string | null };
-        expect(body.orgId).toBeNull();
+      // No setActiveOrg call — session.activeOrganizationId is null.
+      // The org middleware should skip resolution and pass through.
+      const res = await app.request("/probe/org", {
+        headers: { Cookie: cookie },
       });
-    },
-    30_000,
-  );
+      // Not 403 — the middleware should not block when there's no active org.
+      expect(res.status).not.toBe(403);
+      // The probe returns null org fields when no active org is set.
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { orgId: string | null };
+      expect(body.orgId).toBeNull();
+    });
+  }, 30_000);
 
-  it(
-    "populates org + role when activeOrganizationId is set and user is a member",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const { createDb, schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        const app = await buildTestApp();
-        const email = `org-member-${Date.now()}@example.com`;
-        const password = "Password1!";
-        await signUp(app, email, password);
-        let cookie = await signIn(app, email, password);
+  it("populates org + role when activeOrganizationId is set and user is a member", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const { createDb, schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      const app = await buildTestApp();
+      const email = `org-member-${Date.now()}@example.com`;
+      const password = "Password1!";
+      await signUp(app, email, password);
+      let cookie = await signIn(app, email, password);
 
-        // After sign-up, the databaseHook creates a personal org owned by
-        // this user. Fetch it from the test db.
-        const { db: testDb } = createDb(
-          process.env.TEST_DATABASE_URL as string,
-        );
-        const users = await testDb
-          .select({ id: schema.user.id })
-          .from(schema.user)
-          .where(eq(schema.user.email, email));
-        const userId = users[0]?.id;
-        if (!userId) throw new Error("User not found");
+      // After sign-up, the databaseHook creates a personal org owned by
+      // this user. Fetch it from the test db.
+      const { db: testDb } = createDb(process.env.TEST_DATABASE_URL as string);
+      const users = await testDb
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, email));
+      const userId = users[0]?.id;
+      if (!userId) throw new Error("User not found");
 
-        const memberships = await testDb
-          .select({
-            orgId: schema.member.organizationId,
-            role: schema.member.role,
-          })
-          .from(schema.member)
-          .where(eq(schema.member.userId, userId));
-        const membership = memberships[0];
-        if (!membership) throw new Error("No membership found for user");
+      const memberships = await testDb
+        .select({
+          orgId: schema.member.organizationId,
+          role: schema.member.role,
+        })
+        .from(schema.member)
+        .where(eq(schema.member.userId, userId));
+      const membership = memberships[0];
+      if (!membership) throw new Error("No membership found for user");
 
-        // Set the org as active on the session
-        cookie = await setActiveOrg(app, cookie, membership.orgId);
+      // Set the org as active on the session
+      cookie = await setActiveOrg(app, cookie, membership.orgId);
 
-        const res = await app.request("/probe/org", {
-          headers: { Cookie: cookie },
-        });
-        expect(res.status).toBe(200);
-        const body = (await res.json()) as {
-          userId: string;
-          orgId: string;
-          role: string;
-        };
-        expect(body.orgId).toBe(membership.orgId);
-        expect(body.role).toBe(membership.role);
+      const res = await app.request("/probe/org", {
+        headers: { Cookie: cookie },
       });
-    },
-    30_000,
-  );
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        userId: string;
+        orgId: string;
+        role: string;
+      };
+      expect(body.orgId).toBe(membership.orgId);
+      expect(body.role).toBe(membership.role);
+    });
+  }, 30_000);
 
-  it(
-    "returns 403 when user is not a member of the active org (org-scoping)",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const { createDb, schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        const app = await buildTestApp();
-        const password = "Password1!";
+  it("returns 403 when user is not a member of the active org (org-scoping)", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const { createDb, schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      const app = await buildTestApp();
+      const password = "Password1!";
 
-        // Create user A and their org
-        const emailA = `orga-${Date.now()}@example.com`;
-        await signUp(app, emailA, password);
-        await signIn(app, emailA, password);
+      // Create user A and their org
+      const emailA = `orga-${Date.now()}@example.com`;
+      await signUp(app, emailA, password);
+      await signIn(app, emailA, password);
 
-        // Create user B
-        const emailB = `orgb-${Date.now()}@example.com`;
-        await signUp(app, emailB, password);
-        const cookieB = await signIn(app, emailB, password);
+      // Create user B
+      const emailB = `orgb-${Date.now()}@example.com`;
+      await signUp(app, emailB, password);
+      const cookieB = await signIn(app, emailB, password);
 
-        // Find user A's org id
-        const { db: testDb } = createDb(
-          process.env.TEST_DATABASE_URL as string,
-        );
-        const usersA = await testDb
-          .select({ id: schema.user.id })
-          .from(schema.user)
-          .where(eq(schema.user.email, emailA));
-        const userAId = usersA[0]?.id;
-        if (!userAId) throw new Error("User A not found");
+      // Find user A's org id
+      const { db: testDb } = createDb(process.env.TEST_DATABASE_URL as string);
+      const usersA = await testDb
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, emailA));
+      const userAId = usersA[0]?.id;
+      if (!userAId) throw new Error("User A not found");
 
-        const membershipsA = await testDb
-          .select({ orgId: schema.member.organizationId })
-          .from(schema.member)
-          .where(eq(schema.member.userId, userAId));
-        const orgAId = membershipsA[0]?.orgId;
-        if (!orgAId) throw new Error("Org A not found");
+      const membershipsA = await testDb
+        .select({ orgId: schema.member.organizationId })
+        .from(schema.member)
+        .where(eq(schema.member.userId, userAId));
+      const orgAId = membershipsA[0]?.orgId;
+      if (!orgAId) throw new Error("Org A not found");
 
-        // Find user B's id
-        const usersB = await testDb
-          .select({ id: schema.user.id })
-          .from(schema.user)
-          .where(eq(schema.user.email, emailB));
-        const userBId = usersB[0]?.id;
-        if (!userBId) throw new Error("User B not found");
+      // Find user B's id
+      const usersB = await testDb
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, emailB));
+      const userBId = usersB[0]?.id;
+      if (!userBId) throw new Error("User B not found");
 
-        // Forcefully set user B's session's activeOrganizationId to org A's id
-        // by directly updating the session row (bypassing Better Auth's
-        // membership check in setActiveOrg).
-        await testDb
-          .update(schema.session)
-          .set({ activeOrganizationId: orgAId })
-          .where(eq(schema.session.userId, userBId));
+      // Forcefully set user B's session's activeOrganizationId to org A's id
+      // by directly updating the session row (bypassing Better Auth's
+      // membership check in setActiveOrg).
+      await testDb
+        .update(schema.session)
+        .set({ activeOrganizationId: orgAId })
+        .where(eq(schema.session.userId, userBId));
 
-        // User B now has org A as active but is not a member → 403
-        const res = await app.request("/probe/org", {
-          headers: { Cookie: cookieB },
-        });
-        expect(res.status).toBe(403);
+      // User B now has org A as active but is not a member → 403
+      const res = await app.request("/probe/org", {
+        headers: { Cookie: cookieB },
       });
-    },
-    30_000,
-  );
+      expect(res.status).toBe(403);
+    });
+  }, 30_000);
 });
 
 // ---------------------------------------------------------------------------
@@ -357,98 +327,86 @@ describe("orgMiddleware", () => {
 // ---------------------------------------------------------------------------
 
 describe("requireRole", () => {
-  it(
-    "returns 403 when role is not in the allowed list",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const { createDb, schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        const app = await buildTestApp();
-        const email = `role-test-${Date.now()}@example.com`;
-        const password = "Password1!";
-        await signUp(app, email, password);
-        let cookie = await signIn(app, email, password);
+  it("returns 403 when role is not in the allowed list", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const { createDb, schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      const app = await buildTestApp();
+      const email = `role-test-${Date.now()}@example.com`;
+      const password = "Password1!";
+      await signUp(app, email, password);
+      let cookie = await signIn(app, email, password);
 
-        const { db: testDb } = createDb(
-          process.env.TEST_DATABASE_URL as string,
-        );
-        const users = await testDb
-          .select({ id: schema.user.id })
-          .from(schema.user)
-          .where(eq(schema.user.email, email));
-        const userId = users[0]?.id;
-        if (!userId) throw new Error("User not found");
+      const { db: testDb } = createDb(process.env.TEST_DATABASE_URL as string);
+      const users = await testDb
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, email));
+      const userId = users[0]?.id;
+      if (!userId) throw new Error("User not found");
 
-        const memberships = await testDb
-          .select({
-            id: schema.member.id,
-            orgId: schema.member.organizationId,
-          })
-          .from(schema.member)
-          .where(eq(schema.member.userId, userId));
-        const membership = memberships[0];
-        if (!membership) throw new Error("No membership found");
+      const memberships = await testDb
+        .select({
+          id: schema.member.id,
+          orgId: schema.member.organizationId,
+        })
+        .from(schema.member)
+        .where(eq(schema.member.userId, userId));
+      const membership = memberships[0];
+      if (!membership) throw new Error("No membership found");
 
-        // Downgrade role to 'member' so requireRole('owner','admin') rejects
-        await testDb
-          .update(schema.member)
-          .set({ role: "member" })
-          .where(eq(schema.member.id, membership.id));
+      // Downgrade role to 'member' so requireRole('owner','admin') rejects
+      await testDb
+        .update(schema.member)
+        .set({ role: "member" })
+        .where(eq(schema.member.id, membership.id));
 
-        cookie = await setActiveOrg(app, cookie, membership.orgId);
+      cookie = await setActiveOrg(app, cookie, membership.orgId);
 
-        const res = await app.request("/probe/admin", {
-          headers: { Cookie: cookie },
-        });
-        expect(res.status).toBe(403);
+      const res = await app.request("/probe/admin", {
+        headers: { Cookie: cookie },
       });
-    },
-    30_000,
-  );
+      expect(res.status).toBe(403);
+    });
+  }, 30_000);
 
-  it(
-    "passes through when role is in the allowed list",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const { createDb, schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        const app = await buildTestApp();
-        const email = `role-ok-${Date.now()}@example.com`;
-        const password = "Password1!";
-        await signUp(app, email, password);
-        let cookie = await signIn(app, email, password);
+  it("passes through when role is in the allowed list", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const { createDb, schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      const app = await buildTestApp();
+      const email = `role-ok-${Date.now()}@example.com`;
+      const password = "Password1!";
+      await signUp(app, email, password);
+      let cookie = await signIn(app, email, password);
 
-        const { db: testDb } = createDb(
-          process.env.TEST_DATABASE_URL as string,
-        );
-        const users = await testDb
-          .select({ id: schema.user.id })
-          .from(schema.user)
-          .where(eq(schema.user.email, email));
-        const userId = users[0]?.id;
-        if (!userId) throw new Error("User not found");
+      const { db: testDb } = createDb(process.env.TEST_DATABASE_URL as string);
+      const users = await testDb
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, email));
+      const userId = users[0]?.id;
+      if (!userId) throw new Error("User not found");
 
-        const memberships = await testDb
-          .select({
-            id: schema.member.id,
-            orgId: schema.member.organizationId,
-          })
-          .from(schema.member)
-          .where(eq(schema.member.userId, userId));
-        const membership = memberships[0];
-        if (!membership) throw new Error("No membership found");
+      const memberships = await testDb
+        .select({
+          id: schema.member.id,
+          orgId: schema.member.organizationId,
+        })
+        .from(schema.member)
+        .where(eq(schema.member.userId, userId));
+      const membership = memberships[0];
+      if (!membership) throw new Error("No membership found");
 
-        // The user is already owner (creatorRole = 'owner')
-        cookie = await setActiveOrg(app, cookie, membership.orgId);
+      // The user is already owner (creatorRole = 'owner')
+      cookie = await setActiveOrg(app, cookie, membership.orgId);
 
-        const res = await app.request("/probe/admin", {
-          headers: { Cookie: cookie },
-        });
-        expect(res.status).toBe(200);
+      const res = await app.request("/probe/admin", {
+        headers: { Cookie: cookie },
       });
-    },
-    30_000,
-  );
+      expect(res.status).toBe(200);
+    });
+  }, 30_000);
 });

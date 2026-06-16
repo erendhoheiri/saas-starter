@@ -33,6 +33,7 @@ export function captureError(err: unknown): void {
   // TODO: integrate Sentry — Sentry.captureException(err)
   logger.error({
     msg: "[captureError]",
-    err: err instanceof Error ? { message: err.message, stack: err.stack } : err,
+    err:
+      err instanceof Error ? { message: err.message, stack: err.stack } : err,
   });
 }

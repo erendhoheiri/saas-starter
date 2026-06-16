@@ -1,25 +1,25 @@
-import { createRootRoute, createRouter, Outlet } from "@tanstack/react-router"
+import { createRootRoute, createRouter, Outlet } from "@tanstack/react-router";
 
 // Root route — exported so child routes can reference it
 export const rootRoute = createRootRoute({
   component: Outlet,
-})
+});
 
+import { adminLayoutRoute } from "@/routes/_admin";
+import { adminOrgsRoute } from "@/routes/_admin.orgs";
+import { adminUsersRoute } from "@/routes/_admin.users";
+import { appLayoutRoute } from "@/routes/_app";
+import { dashboardRoute } from "@/routes/_app.dashboard";
+import { orgRoute } from "@/routes/_app.org";
+import { settingsRoute } from "@/routes/_app.settings";
+import { forbiddenRoute } from "@/routes/403";
+import { forgotPasswordRoute } from "@/routes/forgot-password";
 // Import routes after rootRoute is defined to avoid circular dependency issues
-import { indexRoute } from "@/routes/index"
-import { loginRoute } from "@/routes/login"
-import { signupRoute } from "@/routes/signup"
-import { forgotPasswordRoute } from "@/routes/forgot-password"
-import { resetPasswordRoute } from "@/routes/reset-password"
-import { verifyEmailRoute } from "@/routes/verify-email"
-import { forbiddenRoute } from "@/routes/403"
-import { appLayoutRoute } from "@/routes/_app"
-import { dashboardRoute } from "@/routes/_app.dashboard"
-import { settingsRoute } from "@/routes/_app.settings"
-import { orgRoute } from "@/routes/_app.org"
-import { adminLayoutRoute } from "@/routes/_admin"
-import { adminUsersRoute } from "@/routes/_admin.users"
-import { adminOrgsRoute } from "@/routes/_admin.orgs"
+import { indexRoute } from "@/routes/index";
+import { loginRoute } from "@/routes/login";
+import { resetPasswordRoute } from "@/routes/reset-password";
+import { signupRoute } from "@/routes/signup";
+import { verifyEmailRoute } from "@/routes/verify-email";
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -31,13 +31,13 @@ const routeTree = rootRoute.addChildren([
   forbiddenRoute,
   appLayoutRoute.addChildren([dashboardRoute, settingsRoute, orgRoute]),
   adminLayoutRoute.addChildren([adminUsersRoute, adminOrgsRoute]),
-])
+]);
 
-export const router = createRouter({ routeTree })
+export const router = createRouter({ routeTree });
 
 // Register router for type safety
 declare module "@tanstack/react-router" {
   interface Register {
-    router: typeof router
+    router: typeof router;
   }
 }

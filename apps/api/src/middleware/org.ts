@@ -1,11 +1,10 @@
-import type { MiddlewareHandler } from "hono";
-import { HTTPException } from "hono/http-exception";
-
 // Type-only import for schema so we can reference the organization type.
 // The runtime import is lazy (inside the handler) to avoid requiring the real
 // @starter/db at module-load time — tests that mock @starter/db before the
 // app loads will see the mock instead of the real module.
 import type { schema } from "@starter/db";
+import type { MiddlewareHandler } from "hono";
+import { HTTPException } from "hono/http-exception";
 
 type OrgRecord = typeof schema.organization.$inferSelect;
 

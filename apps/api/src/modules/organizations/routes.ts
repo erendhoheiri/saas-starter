@@ -7,9 +7,7 @@
  * Zod validation uses hono's built-in `validator` middleware wrapping Zod so
  * that we don't need an additional @hono/zod-validator dependency.
  */
-import { type ZodTypeAny } from "zod";
-import { Hono } from "hono";
-import { validator } from "hono/validator";
+
 import {
   acceptInvitationSchema,
   createOrgSchema,
@@ -18,6 +16,9 @@ import {
   setActiveOrgSchema,
   updateMemberRoleSchema,
 } from "@starter/shared";
+import { Hono } from "hono";
+import { validator } from "hono/validator";
+import type { ZodTypeAny } from "zod";
 import { authMiddleware } from "../../middleware/auth";
 import { orgMiddleware, requireRole } from "../../middleware/org";
 import {

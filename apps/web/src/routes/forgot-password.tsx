@@ -1,24 +1,24 @@
-import { createRoute, Link } from "@tanstack/react-router"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { authClient } from "@/lib/auth"
-import { rootRoute } from "@/router"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createRoute, Link } from "@tanstack/react-router";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth";
+import { rootRoute } from "@/router";
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email(),
-})
+});
 
-export type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>
+export type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
 
 export const forgotPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/forgot-password",
   component: ForgotPasswordPage,
-})
+});
 
 function ForgotPasswordPage() {
   const {
@@ -28,17 +28,19 @@ function ForgotPasswordPage() {
     setError,
   } = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
-  })
+  });
 
   const onSubmit = async (data: ForgotPasswordForm) => {
     const result = await authClient.requestPasswordReset({
       email: data.email,
       redirectTo: "/reset-password",
-    })
+    });
     if (result.error) {
-      setError("root", { message: result.error.message ?? "Failed to send reset email" })
+      setError("root", {
+        message: result.error.message ?? "Failed to send reset email",
+      });
     }
-  }
+  };
 
   if (isSubmitSuccessful) {
     return (
@@ -49,17 +51,21 @@ function ForgotPasswordPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              If an account exists for that email address, we&apos;ve sent a password reset link.
+              If an account exists for that email address, we&apos;ve sent a
+              password reset link.
             </p>
             <p className="mt-4 text-center text-sm">
-              <Link to="/login" className="text-primary underline-offset-4 hover:underline">
+              <Link
+                to="/login"
+                className="text-primary underline-offset-4 hover:underline"
+              >
                 Back to sign in
               </Link>
             </p>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -70,7 +76,8 @@ function ForgotPasswordPage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Enter your email address and we&apos;ll send you a link to reset your password.
+            Enter your email address and we&apos;ll send you a link to reset
+            your password.
           </p>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input type="email" placeholder="Email" {...register("email")} />
@@ -85,12 +92,15 @@ function ForgotPasswordPage() {
             </Button>
           </form>
           <p className="mt-4 text-center text-sm">
-            <Link to="/login" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              to="/login"
+              className="text-primary underline-offset-4 hover:underline"
+            >
               Back to sign in
             </Link>
           </p>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

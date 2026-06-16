@@ -45,7 +45,9 @@ export interface RateLimitOptions {
   store?: RateLimitStore;
 }
 
-export function rateLimitMiddleware(options: RateLimitOptions): MiddlewareHandler {
+export function rateLimitMiddleware(
+  options: RateLimitOptions,
+): MiddlewareHandler {
   const store: RateLimitStore = options.store ?? new InMemoryRateLimitStore();
 
   return async (c: Context, next: Next) => {

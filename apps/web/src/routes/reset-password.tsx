@@ -1,13 +1,17 @@
-import { createRoute, Link, useSearch } from "@tanstack/react-router"
-import { useNavigate } from "@tanstack/react-router"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { authClient } from "@/lib/auth"
-import { rootRoute } from "@/router"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  createRoute,
+  Link,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth";
+import { rootRoute } from "@/router";
 
 export const resetPasswordSchema = z
   .object({
@@ -17,20 +21,20 @@ export const resetPasswordSchema = z
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  })
+  });
 
-export type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
+export type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
 export const resetPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/reset-password",
   validateSearch: z.object({ token: z.string().optional() }),
   component: ResetPasswordPage,
-})
+});
 
 function ResetPasswordPage() {
-  const navigate = useNavigate()
-  const { token } = useSearch({ from: "/reset-password" })
+  const navigate = useNavigate();
+  const { token } = useSearch({ from: "/reset-password" });
   const {
     register,
     handleSubmit,
@@ -38,23 +42,25 @@ function ResetPasswordPage() {
     setError,
   } = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
-  })
+  });
 
   const onSubmit = async (data: ResetPasswordForm) => {
     if (!token) {
-      setError("root", { message: "Invalid or missing reset token" })
-      return
+      setError("root", { message: "Invalid or missing reset token" });
+      return;
     }
     const result = await authClient.resetPassword({
       newPassword: data.newPassword,
       token,
-    })
+    });
     if (result.error) {
-      setError("root", { message: result.error.message ?? "Failed to reset password" })
-      return
+      setError("root", {
+        message: result.error.message ?? "Failed to reset password",
+      });
+      return;
     }
-    navigate({ to: "/login" })
-  }
+    navigate({ to: "/login" });
+  };
 
   if (!token) {
     return (
@@ -68,14 +74,17 @@ function ResetPasswordPage() {
               This password reset link is invalid or has expired.
             </p>
             <p className="mt-4 text-center text-sm">
-              <Link to="/forgot-password" className="text-primary underline-offset-4 hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-primary underline-offset-4 hover:underline"
+              >
                 Request a new link
               </Link>
             </p>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -86,9 +95,15 @@ function ResetPasswordPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input type="password" placeholder="New password" {...register("newPassword")} />
+            <Input
+              type="password"
+              placeholder="New password"
+              {...register("newPassword")}
+            />
             {errors.newPassword && (
-              <p className="text-red-500 text-sm">{errors.newPassword.message}</p>
+              <p className="text-red-500 text-sm">
+                {errors.newPassword.message}
+              </p>
             )}
             <Input
               type="password"
@@ -96,7 +111,9 @@ function ResetPasswordPage() {
               {...register("confirmPassword")}
             />
             {errors.confirmPassword && (
-              <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>
+              <p className="text-red-500 text-sm">
+                {errors.confirmPassword.message}
+              </p>
             )}
             {errors.root && (
               <p className="text-red-500 text-sm">{errors.root.message}</p>
@@ -108,5 +125,5 @@ function ResetPasswordPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

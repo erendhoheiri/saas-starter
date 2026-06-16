@@ -30,7 +30,7 @@ describe("requestId middleware", () => {
     app.get("/", (c) => c.json({ requestId: c.get("requestId") }));
 
     const res = await app.request("/");
-    const body = await res.json<{ requestId: string }>();
+    const body = (await res.json()) as { requestId: string };
     expect(body.requestId).toBeTruthy();
     expect(body.requestId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,

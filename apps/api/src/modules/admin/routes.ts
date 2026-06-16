@@ -14,8 +14,9 @@
  * membership roles — the admin concept here is the platform super-admin role
  * stored on user.role.
  */
-import { Hono } from "hono";
+
 import type { MiddlewareHandler } from "hono";
+import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authMiddleware } from "../../middleware/auth";
 import {
@@ -42,7 +43,9 @@ export function adminMiddleware(): MiddlewareHandler {
   return async (c, next) => {
     const user = c.get("user");
     if (!user || user.role !== "admin") {
-      throw new HTTPException(403, { message: "Forbidden: platform admin required" });
+      throw new HTTPException(403, {
+        message: "Forbidden: platform admin required",
+      });
     }
     await next();
   };
@@ -57,7 +60,11 @@ export const adminRouter = new Hono();
 // POST /api/admin/impersonate/exit — exit impersonation session
 // Registered BEFORE the /* middleware so it matches first.
 // Only auth is required here — the handler checks impersonatedBy itself.
-adminRouter.post("/impersonate/exit", authMiddleware(), exitImpersonationHandler);
+adminRouter.post(
+  "/impersonate/exit",
+  authMiddleware(),
+  exitImpersonationHandler,
+);
 
 // Apply auth + admin check to all other admin routes
 adminRouter.use("/*", authMiddleware(), adminMiddleware());

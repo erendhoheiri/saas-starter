@@ -1,23 +1,23 @@
-import { useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
-import { useSession } from "@/lib/auth"
-import { api } from "@/lib/api"
-import { Button } from "@/components/ui/button"
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+import { useSession } from "@/lib/auth";
 
 export function ImpersonationBanner() {
-  const { data: session } = useSession()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  const isImpersonating = !!(session as any)?.session?.impersonatedBy
-  const targetUserEmail = (session as any)?.user?.email
+  const isImpersonating = !!(session as any)?.session?.impersonatedBy;
+  const targetUserEmail = (session as any)?.user?.email;
 
-  if (!isImpersonating) return null
+  if (!isImpersonating) return null;
 
   async function handleExit() {
-    await (api as any).api.admin.impersonate.exit.$post()
-    await queryClient.invalidateQueries()
-    navigate({ to: "/admin/users" })
+    await (api as any).api.admin.impersonate.exit.$post();
+    await queryClient.invalidateQueries();
+    navigate({ to: "/admin/users" });
   }
 
   return (
@@ -34,5 +34,5 @@ export function ImpersonationBanner() {
         Exit impersonation
       </Button>
     </div>
-  )
+  );
 }

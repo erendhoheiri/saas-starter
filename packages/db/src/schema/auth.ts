@@ -46,7 +46,9 @@ export const session = pgTable("session", {
    * Contains the platform admin's user id who initiated the impersonation.
    * Null for normal sessions.
    */
-  impersonatedBy: text("impersonated_by").references(() => user.id, { onDelete: "set null" }),
+  impersonatedBy: text("impersonated_by").references(() => user.id, {
+    onDelete: "set null",
+  }),
   ...timestamps(),
 });
 

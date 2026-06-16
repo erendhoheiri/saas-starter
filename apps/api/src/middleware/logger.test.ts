@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { Hono } from "hono";
-import { requestIdMiddleware } from "./requestId";
 import { loggerMiddleware } from "./logger";
+import { requestIdMiddleware } from "./requestId";
 
 describe("logger middleware", () => {
   let logs: string[] = [];

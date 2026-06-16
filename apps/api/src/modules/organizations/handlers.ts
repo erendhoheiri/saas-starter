@@ -38,7 +38,9 @@ function validatedJson<T>(c: Context): T {
  * type on the presence of statusCode (a number) to distinguish it from other
  * error types.
  */
-function isBetterAuthApiError(err: unknown): err is { statusCode: number; body?: { message?: string; code?: string } } {
+function isBetterAuthApiError(
+  err: unknown,
+): err is { statusCode: number; body?: { message?: string; code?: string } } {
   if (
     typeof err !== "object" ||
     err === null ||
@@ -103,12 +105,21 @@ export async function listOrgsHandler(c: Context) {
 
 export async function inviteMemberHandler(c: Context) {
   const { auth } = await import("@starter/auth");
-  const body = validatedJson<{ email: string; role: string; organizationId?: string }>(c);
+  const body = validatedJson<{
+    email: string;
+    role: string;
+    organizationId?: string;
+  }>(c);
   return relayAuthResponse(c, () =>
     // biome-ignore lint/suspicious/noExplicitAny: Better Auth's role type is
     // narrowly inferred from plugin options; we cast to any here since the
     // runtime value is validated by the Zod schema before reaching this point.
-    (auth.api.createInvitation as (opts: { body: { email: string; role: unknown; organizationId?: string }; headers: Headers }) => Promise<unknown>)({
+    (
+      auth.api.createInvitation as (opts: {
+        body: { email: string; role: unknown; organizationId?: string };
+        headers: Headers;
+      }) => Promise<unknown>
+    )({
       body: {
         email: body.email,
         role: body.role,
@@ -132,7 +143,11 @@ export async function acceptInvitationHandler(c: Context) {
 
 export async function updateMemberRoleHandler(c: Context) {
   const { auth } = await import("@starter/auth");
-  const body = validatedJson<{ memberId: string; role: string; organizationId?: string }>(c);
+  const body = validatedJson<{
+    memberId: string;
+    role: string;
+    organizationId?: string;
+  }>(c);
   return relayAuthResponse(c, () =>
     auth.api.updateMemberRole({
       body: {
@@ -147,7 +162,10 @@ export async function updateMemberRoleHandler(c: Context) {
 
 export async function removeMemberHandler(c: Context) {
   const { auth } = await import("@starter/auth");
-  const body = validatedJson<{ memberIdOrEmail: string; organizationId?: string }>(c);
+  const body = validatedJson<{
+    memberIdOrEmail: string;
+    organizationId?: string;
+  }>(c);
   return relayAuthResponse(c, () =>
     auth.api.removeMember({
       body: {

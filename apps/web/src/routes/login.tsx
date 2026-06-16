@@ -1,29 +1,28 @@
-import { createRoute, Link } from "@tanstack/react-router"
-import { useNavigate } from "@tanstack/react-router"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { signIn } from "@/lib/auth"
-import { rootRoute } from "@/router"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { signIn } from "@/lib/auth";
+import { rootRoute } from "@/router";
 
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-})
+});
 
-export type LoginForm = z.infer<typeof loginSchema>
+export type LoginForm = z.infer<typeof loginSchema>;
 
 export const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
   component: LoginPage,
-})
+});
 
 function LoginPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -31,16 +30,19 @@ function LoginPage() {
     setError,
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-  })
+  });
 
   const onSubmit = async (data: LoginForm) => {
-    const result = await signIn.email({ email: data.email, password: data.password })
+    const result = await signIn.email({
+      email: data.email,
+      password: data.password,
+    });
     if (result.error) {
-      setError("root", { message: result.error.message ?? "Sign in failed" })
-      return
+      setError("root", { message: result.error.message ?? "Sign in failed" });
+      return;
     }
-    navigate({ to: "/dashboard" })
-  }
+    navigate({ to: "/dashboard" });
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -54,7 +56,11 @@ function LoginPage() {
             {errors.email && (
               <p className="text-red-500 text-sm">{errors.email.message}</p>
             )}
-            <Input type="password" placeholder="Password" {...register("password")} />
+            <Input
+              type="password"
+              placeholder="Password"
+              {...register("password")}
+            />
             {errors.password && (
               <p className="text-red-500 text-sm">{errors.password.message}</p>
             )}
@@ -67,13 +73,19 @@ function LoginPage() {
           </form>
           <div className="mt-4 text-center text-sm space-y-1">
             <p>
-              <Link to="/forgot-password" className="text-primary underline-offset-4 hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-primary underline-offset-4 hover:underline"
+              >
                 Forgot password?
               </Link>
             </p>
             <p>
               Don&apos;t have an account?{" "}
-              <Link to="/signup" className="text-primary underline-offset-4 hover:underline">
+              <Link
+                to="/signup"
+                className="text-primary underline-offset-4 hover:underline"
+              >
                 Sign up
               </Link>
             </p>
@@ -81,5 +93,5 @@ function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { LocalStorageProvider } from "./local";
 import { createStorageProvider } from "./index";
+import { LocalStorageProvider } from "./local";
 
 describe("LocalStorageProvider", () => {
   let tmpDir: string;

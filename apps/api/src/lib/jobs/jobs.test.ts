@@ -79,6 +79,6 @@ describe("MemoryJobQueue", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    expect(deletedId).toBe("user-123");
+    expect(deletedId as unknown as string).toBe("user-123");
   });
 });

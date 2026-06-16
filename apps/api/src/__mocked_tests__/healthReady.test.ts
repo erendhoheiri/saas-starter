@@ -32,10 +32,15 @@ mock.module("@starter/db", () => {
   return {
     db: {
       execute: async () => [{ "1": 1 }],
-      select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
+      select: () => ({
+        from: () => ({ where: () => ({ limit: async () => [] }) }),
+      }),
     },
     schema: stubSchema,
-    createDb: () => ({ db: { execute: async () => [] }, client: { end: async () => {} } }),
+    createDb: () => ({
+      db: { execute: async () => [] },
+      client: { end: async () => {} },
+    }),
     client: {},
   };
 });
@@ -45,7 +50,7 @@ describe("GET /health/ready", () => {
     const { app } = await import("../app");
     const res = await app.request("/health/ready");
     expect(res.status).toBe(200);
-    const body = await res.json<{ status: string }>();
+    const body = (await res.json()) as { status: string };
     expect(body.status).toBe("ok");
   });
 
@@ -62,7 +67,10 @@ describe("GET /health/ready", () => {
         },
       },
       schema: {},
-      createDb: () => ({ db: { execute: async () => [] }, client: { end: async () => {} } }),
+      createDb: () => ({
+        db: { execute: async () => [] },
+        client: { end: async () => {} },
+      }),
       client: {},
     }));
 
@@ -81,7 +89,7 @@ describe("GET /health/ready", () => {
 
     const res = await testApp.request("/health/ready");
     expect(res.status).toBe(503);
-    const body = await res.json<{ status: string; message: string }>();
+    const body = (await res.json()) as { status: string; message: string };
     expect(body.status).toBe("error");
     // Should NOT leak internal error details
     expect(body.message).not.toContain("connection refused");

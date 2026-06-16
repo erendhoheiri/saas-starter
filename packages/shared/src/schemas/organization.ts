@@ -10,7 +10,10 @@ export const createOrgSchema = z.object({
     .string()
     .min(1)
     .max(60)
-    .regex(/^[a-z0-9-]+$/, "Slug may only contain lowercase letters, numbers, and hyphens"),
+    .regex(
+      /^[a-z0-9-]+$/,
+      "Slug may only contain lowercase letters, numbers, and hyphens",
+    ),
 });
 
 export const inviteMemberSchema = z.object({

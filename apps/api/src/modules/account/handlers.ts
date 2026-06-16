@@ -11,9 +11,10 @@
  * All DB imports are lazy to keep this module safe in test environments that
  * mock @starter/db before app initialization.
  */
+
+import type { UpdateProfileInput } from "@starter/shared";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import type { UpdateProfileInput } from "@starter/shared";
 import { collectOrgData, collectUserData } from "./collect";
 
 // ---------------------------------------------------------------------------
@@ -264,7 +265,10 @@ export async function deleteOrgHandler(c: Context) {
 
   // Verify org exists and is not already deleted
   const orgRows = await db
-    .select({ id: schema.organization.id, deletedAt: schema.organization.deletedAt })
+    .select({
+      id: schema.organization.id,
+      deletedAt: schema.organization.deletedAt,
+    })
     .from(schema.organization)
     .where(eq(schema.organization.id, orgId))
     .limit(1);

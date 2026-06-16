@@ -15,7 +15,11 @@ export class LocalStorageProvider implements StorageProvider {
     return join(this.baseDir, key);
   }
 
-  async upload(key: string, buffer: Buffer, _contentType: string): Promise<void> {
+  async upload(
+    key: string,
+    buffer: Buffer,
+    _contentType: string,
+  ): Promise<void> {
     const filePath = this.resolvePath(key);
     await mkdir(dirname(filePath), { recursive: true });
     await writeFile(filePath, buffer);

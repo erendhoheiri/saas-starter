@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { Hono } from "hono";
-import { rateLimitMiddleware, InMemoryRateLimitStore } from "./rateLimit";
+import { InMemoryRateLimitStore, rateLimitMiddleware } from "./rateLimit";
 
 describe("rateLimit middleware", () => {
   it("allows requests under the limit", async () => {
@@ -56,7 +56,9 @@ describe("rateLimit middleware", () => {
 
     await app.request("/");
     const res = await app.request("/");
-    const body = await res.json<{ error: { code: string; message: string } }>();
+    const body = (await res.json()) as {
+      error: { code: string; message: string };
+    };
     expect(body.error.code).toBe("RATE_LIMITED");
     expect(typeof body.error.message).toBe("string");
   });

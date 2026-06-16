@@ -1,12 +1,18 @@
-import { createRoute } from "@tanstack/react-router"
-import { appLayoutRoute } from "@/routes/_app"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { createRoute } from "@tanstack/react-router";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { appLayoutRoute } from "@/routes/_app";
 
 export const dashboardRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/dashboard",
   component: DashboardPage,
-})
+});
 
 function DashboardPage() {
   return (
@@ -22,5 +28,5 @@ function DashboardPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

@@ -1,15 +1,15 @@
-import { Link, useNavigate } from "@tanstack/react-router"
-import { signOut } from "@/lib/auth"
-import { OrgSwitcher } from "./org-switcher"
-import { Button } from "@/components/ui/button"
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { signOut } from "@/lib/auth";
+import { OrgSwitcher } from "./org-switcher";
 
 export function Nav() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await signOut()
-    navigate({ to: "/login" })
-  }
+    await signOut();
+    navigate({ to: "/login" });
+  };
 
   return (
     <header className="border-b px-6 py-3 flex items-center gap-4">
@@ -29,5 +29,5 @@ export function Nav() {
         Sign out
       </Button>
     </header>
-  )
+  );
 }

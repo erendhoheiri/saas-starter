@@ -1,8 +1,8 @@
-import { describe, it, expect } from "bun:test"
-import { api } from "./api"
+import { describe, expect, it } from "bun:test";
+import { api } from "./api";
 
 describe("api client", () => {
   it("has expected route namespaces", () => {
-    expect(api.api).toBeDefined()
-  })
-})
+    expect(api.api).toBeDefined();
+  });
+});

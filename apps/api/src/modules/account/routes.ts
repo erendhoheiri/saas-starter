@@ -12,10 +12,11 @@
  * ownership inside the handler (no activeOrganizationId needed for this
  * endpoint — the orgId comes from the URL param).
  */
-import { type ZodTypeAny } from "zod";
+
+import { updateProfileSchema } from "@starter/shared";
 import { Hono } from "hono";
 import { validator } from "hono/validator";
-import { updateProfileSchema } from "@starter/shared";
+import type { ZodTypeAny } from "zod";
 import { authMiddleware } from "../../middleware/auth";
 import {
   deleteAccountHandler,

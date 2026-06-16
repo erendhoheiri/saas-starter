@@ -37,7 +37,18 @@ export function errorHandler(): (err: Error, c: Context) => Response {
       const code = statusToCode(err.status);
       return c.json(
         { error: { code, message: err.message } },
-        err.status as 400 | 401 | 403 | 404 | 405 | 409 | 422 | 429 | 500 | 502 | 503,
+        err.status as
+          | 400
+          | 401
+          | 403
+          | 404
+          | 405
+          | 409
+          | 422
+          | 429
+          | 500
+          | 502
+          | 503,
       );
     }
 

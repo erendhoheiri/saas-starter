@@ -54,25 +54,36 @@ async function buildTestApp() {
 // Auth helpers
 // ---------------------------------------------------------------------------
 
-async function signUp(app: Hono, email: string, password: string, name = "Test User"): Promise<string> {
+async function signUp(
+  app: Hono,
+  email: string,
+  password: string,
+  name = "Test User",
+): Promise<string> {
   const res = await app.request("/api/auth/sign-up/email", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, name }),
   });
-  if (!res.ok) throw new Error(`Sign-up failed (${res.status}): ${await res.text()}`);
+  if (!res.ok)
+    throw new Error(`Sign-up failed (${res.status}): ${await res.text()}`);
   const cookie = res.headers.get("set-cookie");
   if (!cookie) throw new Error("No Set-Cookie on sign-up");
   return cookie;
 }
 
-async function signIn(app: Hono, email: string, password: string): Promise<string> {
+async function signIn(
+  app: Hono,
+  email: string,
+  password: string,
+): Promise<string> {
   const res = await app.request("/api/auth/sign-in/email", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  if (!res.ok) throw new Error(`Sign-in failed (${res.status}): ${await res.text()}`);
+  if (!res.ok)
+    throw new Error(`Sign-in failed (${res.status}): ${await res.text()}`);
   const cookie = res.headers.get("set-cookie");
   if (!cookie) throw new Error("No Set-Cookie on sign-in");
   return cookie;
@@ -90,7 +101,10 @@ async function signUpAdmin(
   const { eq } = await import("drizzle-orm");
   // biome-ignore lint/suspicious/noExplicitAny: test helper
   const db = testDb as any;
-  await db.update(schema.user).set({ role: "admin" }).where(eq(schema.user.email, email));
+  await db
+    .update(schema.user)
+    .set({ role: "admin" })
+    .where(eq(schema.user.email, email));
   // Re-sign-in to get a fresh session that reflects the updated role
   return signIn(app, email, password);
 }
@@ -100,55 +114,51 @@ async function signUpAdmin(
 // ---------------------------------------------------------------------------
 
 describe("Admin routes — non-admin gets 403", () => {
-  it(
-    "non-admin user gets 403 on GET /api/admin/users",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const app = await buildTestApp();
-        const cookie = await signUp(app, `nonadmin-users-${Date.now()}@example.com`, "Password1!");
+  it("non-admin user gets 403 on GET /api/admin/users", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const app = await buildTestApp();
+      const cookie = await signUp(
+        app,
+        `nonadmin-users-${Date.now()}@example.com`,
+        "Password1!",
+      );
 
-        const res = await app.request("/api/admin/users", {
-          headers: { Cookie: cookie },
-        });
-
-        expect(res.status).toBe(403);
+      const res = await app.request("/api/admin/users", {
+        headers: { Cookie: cookie },
       });
-    },
-    30_000,
-  );
 
-  it(
-    "non-admin user gets 403 on GET /api/admin/orgs",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const app = await buildTestApp();
-        const cookie = await signUp(app, `nonadmin-orgs-${Date.now()}@example.com`, "Password1!");
+      expect(res.status).toBe(403);
+    });
+  }, 30_000);
 
-        const res = await app.request("/api/admin/orgs", {
-          headers: { Cookie: cookie },
-        });
+  it("non-admin user gets 403 on GET /api/admin/orgs", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const app = await buildTestApp();
+      const cookie = await signUp(
+        app,
+        `nonadmin-orgs-${Date.now()}@example.com`,
+        "Password1!",
+      );
 
-        expect(res.status).toBe(403);
+      const res = await app.request("/api/admin/orgs", {
+        headers: { Cookie: cookie },
       });
-    },
-    30_000,
-  );
 
-  it(
-    "unauthenticated request gets 401 on GET /api/admin/users",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async () => {
-        const app = await buildTestApp();
+      expect(res.status).toBe(403);
+    });
+  }, 30_000);
 
-        const res = await app.request("/api/admin/users");
-        expect(res.status).toBe(401);
-      });
-    },
-    30_000,
-  );
+  it("unauthenticated request gets 401 on GET /api/admin/users", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async () => {
+      const app = await buildTestApp();
+
+      const res = await app.request("/api/admin/users");
+      expect(res.status).toBe(401);
+    });
+  }, 30_000);
 });
 
 // ---------------------------------------------------------------------------
@@ -156,88 +166,107 @@ describe("Admin routes — non-admin gets 403", () => {
 // ---------------------------------------------------------------------------
 
 describe("GET /api/admin/users — list users", () => {
-  it(
-    "admin can list users and get paginated result",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const app = await buildTestApp();
-        const adminEmail = `admin-list-users-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+  it("admin can list users and get paginated result", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const app = await buildTestApp();
+      const adminEmail = `admin-list-users-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        // Create a regular user too
-        await signUp(app, `regular-list-${Date.now()}@example.com`, "Password1!");
+      // Create a regular user too
+      await signUp(app, `regular-list-${Date.now()}@example.com`, "Password1!");
 
-        const res = await app.request("/api/admin/users", {
-          headers: { Cookie: adminCookie },
-        });
-
-        expect(res.status).toBe(200);
-        const body = await res.json() as { data: Array<{ id: string; email: string; name: string; role: string; bannedAt: unknown; createdAt: string }>; total: number; page: number; limit: number };
-        expect(Array.isArray(body.data)).toBe(true);
-        expect(body.data.length).toBeGreaterThan(0);
-        expect(typeof body.total).toBe("number");
-        // Verify shape of first user
-        const firstUser = body.data[0];
-        expect(firstUser).toHaveProperty("id");
-        expect(firstUser).toHaveProperty("email");
-        expect(firstUser).toHaveProperty("name");
-        expect(firstUser).toHaveProperty("role");
-        expect(firstUser).toHaveProperty("bannedAt");
-        expect(firstUser).toHaveProperty("createdAt");
+      const res = await app.request("/api/admin/users", {
+        headers: { Cookie: adminCookie },
       });
-    },
-    30_000,
-  );
 
-  it(
-    "admin can search users by email with q param",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const app = await buildTestApp();
-        const uniqueTag = `unique-search-${Date.now()}`;
-        const adminEmail = `admin-search-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        data: Array<{
+          id: string;
+          email: string;
+          name: string;
+          role: string;
+          bannedAt: unknown;
+          createdAt: string;
+        }>;
+        total: number;
+        page: number;
+        limit: number;
+      };
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data.length).toBeGreaterThan(0);
+      expect(typeof body.total).toBe("number");
+      // Verify shape of first user
+      const firstUser = body.data[0];
+      expect(firstUser).toHaveProperty("id");
+      expect(firstUser).toHaveProperty("email");
+      expect(firstUser).toHaveProperty("name");
+      expect(firstUser).toHaveProperty("role");
+      expect(firstUser).toHaveProperty("bannedAt");
+      expect(firstUser).toHaveProperty("createdAt");
+    });
+  }, 30_000);
 
-        // Create a user with a distinctive email
-        await signUp(app, `${uniqueTag}@example.com`, "Password1!");
+  it("admin can search users by email with q param", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const app = await buildTestApp();
+      const uniqueTag = `unique-search-${Date.now()}`;
+      const adminEmail = `admin-search-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        const res = await app.request(`/api/admin/users?q=${uniqueTag}`, {
-          headers: { Cookie: adminCookie },
-        });
+      // Create a user with a distinctive email
+      await signUp(app, `${uniqueTag}@example.com`, "Password1!");
 
-        expect(res.status).toBe(200);
-        const body = await res.json() as { data: Array<{ email: string }> };
-        expect(body.data.length).toBeGreaterThan(0);
-        expect(body.data[0]?.email).toContain(uniqueTag);
+      const res = await app.request(`/api/admin/users?q=${uniqueTag}`, {
+        headers: { Cookie: adminCookie },
       });
-    },
-    30_000,
-  );
 
-  it(
-    "respects page and limit params",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const app = await buildTestApp();
-        const adminEmail = `admin-page-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { data: Array<{ email: string }> };
+      expect(body.data.length).toBeGreaterThan(0);
+      expect(body.data[0]?.email).toContain(uniqueTag);
+    });
+  }, 30_000);
 
-        const res = await app.request("/api/admin/users?page=1&limit=1", {
-          headers: { Cookie: adminCookie },
-        });
+  it("respects page and limit params", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const app = await buildTestApp();
+      const adminEmail = `admin-page-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        expect(res.status).toBe(200);
-        const body = await res.json() as { data: unknown[]; limit: number; page: number };
-        expect(body.data.length).toBeLessThanOrEqual(1);
-        expect(body.page).toBe(1);
-        expect(body.limit).toBe(1);
+      const res = await app.request("/api/admin/users?page=1&limit=1", {
+        headers: { Cookie: adminCookie },
       });
-    },
-    30_000,
-  );
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        data: unknown[];
+        limit: number;
+        page: number;
+      };
+      expect(body.data.length).toBeLessThanOrEqual(1);
+      expect(body.page).toBe(1);
+      expect(body.limit).toBe(1);
+    });
+  }, 30_000);
 });
 
 // ---------------------------------------------------------------------------
@@ -245,65 +274,81 @@ describe("GET /api/admin/users — list users", () => {
 // ---------------------------------------------------------------------------
 
 describe("GET /api/admin/orgs — list orgs", () => {
-  it(
-    "admin can list orgs and get paginated result",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const app = await buildTestApp();
-        const adminEmail = `admin-list-orgs-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+  it("admin can list orgs and get paginated result", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const app = await buildTestApp();
+      const adminEmail = `admin-list-orgs-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        const res = await app.request("/api/admin/orgs", {
-          headers: { Cookie: adminCookie },
-        });
-
-        expect(res.status).toBe(200);
-        const body = await res.json() as { data: Array<{ id: string; name: string; slug: string; deletedAt: unknown; createdAt: string }>; total: number; page: number; limit: number };
-        expect(Array.isArray(body.data)).toBe(true);
-        expect(body.data.length).toBeGreaterThan(0);
-        const firstOrg = body.data[0];
-        expect(firstOrg).toHaveProperty("id");
-        expect(firstOrg).toHaveProperty("name");
-        expect(firstOrg).toHaveProperty("slug");
-        expect(firstOrg).toHaveProperty("deletedAt");
-        expect(firstOrg).toHaveProperty("createdAt");
+      const res = await app.request("/api/admin/orgs", {
+        headers: { Cookie: adminCookie },
       });
-    },
-    30_000,
-  );
 
-  it(
-    "admin can search orgs by name with q param",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const app = await buildTestApp();
-        const uniqueOrgName = `UniqueOrg-${Date.now()}`;
-        const adminEmail = `admin-org-search-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        data: Array<{
+          id: string;
+          name: string;
+          slug: string;
+          deletedAt: unknown;
+          createdAt: string;
+        }>;
+        total: number;
+        page: number;
+        limit: number;
+      };
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data.length).toBeGreaterThan(0);
+      const firstOrg = body.data[0];
+      expect(firstOrg).toHaveProperty("id");
+      expect(firstOrg).toHaveProperty("name");
+      expect(firstOrg).toHaveProperty("slug");
+      expect(firstOrg).toHaveProperty("deletedAt");
+      expect(firstOrg).toHaveProperty("createdAt");
+    });
+  }, 30_000);
 
-        // Create an org via Better Auth
-        const { schema } = await import("@starter/db");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        await db.insert(schema.organization).values({
-          name: uniqueOrgName,
-          slug: `unique-org-${Date.now()}`,
-        });
+  it("admin can search orgs by name with q param", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const app = await buildTestApp();
+      const uniqueOrgName = `UniqueOrg-${Date.now()}`;
+      const adminEmail = `admin-org-search-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        const res = await app.request(`/api/admin/orgs?q=${encodeURIComponent(uniqueOrgName)}`, {
-          headers: { Cookie: adminCookie },
-        });
-
-        expect(res.status).toBe(200);
-        const body = await res.json() as { data: Array<{ name: string }> };
-        expect(body.data.length).toBeGreaterThan(0);
-        expect(body.data[0]?.name).toContain(uniqueOrgName);
+      // Create an org via Better Auth
+      const { schema } = await import("@starter/db");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      await db.insert(schema.organization).values({
+        name: uniqueOrgName,
+        slug: `unique-org-${Date.now()}`,
       });
-    },
-    30_000,
-  );
+
+      const res = await app.request(
+        `/api/admin/orgs?q=${encodeURIComponent(uniqueOrgName)}`,
+        {
+          headers: { Cookie: adminCookie },
+        },
+      );
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { data: Array<{ name: string }> };
+      expect(body.data.length).toBeGreaterThan(0);
+      expect(body.data[0]?.name).toContain(uniqueOrgName);
+    });
+  }, 30_000);
 });
 
 // ---------------------------------------------------------------------------
@@ -311,145 +356,170 @@ describe("GET /api/admin/orgs — list orgs", () => {
 // ---------------------------------------------------------------------------
 
 describe("POST /api/admin/users/:userId/suspend + unsuspend", () => {
-  it(
-    "admin can suspend a user — sets bannedAt",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-suspend-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+  it("admin can suspend a user — sets bannedAt", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-suspend-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        const targetEmail = `target-suspend-${Date.now()}@example.com`;
-        await signUp(app, targetEmail, "Password1!");
+      const targetEmail = `target-suspend-${Date.now()}@example.com`;
+      await signUp(app, targetEmail, "Password1!");
 
-        // Get target user id from DB
-        const targetRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, targetEmail));
-        const targetId = targetRows[0]?.id;
-        expect(targetId).toBeDefined();
+      // Get target user id from DB
+      const targetRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, targetEmail));
+      const targetId = targetRows[0]?.id;
+      expect(targetId).toBeDefined();
 
-        const res = await app.request(`/api/admin/users/${targetId}/suspend`, {
-          method: "POST",
-          headers: { Cookie: adminCookie },
-        });
-
-        expect(res.status).toBe(200);
-
-        // Verify bannedAt is now set in DB
-        const updatedRows = await db.select({ bannedAt: schema.user.bannedAt }).from(schema.user).where(eq(schema.user.id, targetId));
-        expect(updatedRows[0]?.bannedAt).not.toBeNull();
+      const res = await app.request(`/api/admin/users/${targetId}/suspend`, {
+        method: "POST",
+        headers: { Cookie: adminCookie },
       });
-    },
-    30_000,
-  );
 
-  it(
-    "suspended user's auth requests return 401",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-ban-401-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+      expect(res.status).toBe(200);
 
-        const targetEmail = `target-ban-401-${Date.now()}@example.com`;
-        const targetCookie = await signUp(app, targetEmail, "Password1!");
+      // Verify bannedAt is now set in DB
+      const updatedRows = await db
+        .select({ bannedAt: schema.user.bannedAt })
+        .from(schema.user)
+        .where(eq(schema.user.id, targetId));
+      expect(updatedRows[0]?.bannedAt).not.toBeNull();
+    });
+  }, 30_000);
 
-        // Get target user id
-        const targetRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, targetEmail));
-        const targetId = targetRows[0]?.id;
+  it("suspended user's auth requests return 401", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-ban-401-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        // Suspend the target
-        const suspendRes = await app.request(`/api/admin/users/${targetId}/suspend`, {
+      const targetEmail = `target-ban-401-${Date.now()}@example.com`;
+      const targetCookie = await signUp(app, targetEmail, "Password1!");
+
+      // Get target user id
+      const targetRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, targetEmail));
+      const targetId = targetRows[0]?.id;
+
+      // Suspend the target
+      const suspendRes = await app.request(
+        `/api/admin/users/${targetId}/suspend`,
+        {
           method: "POST",
           headers: { Cookie: adminCookie },
-        });
-        expect(suspendRes.status).toBe(200);
+        },
+      );
+      expect(suspendRes.status).toBe(200);
 
-        // Target's existing session cookie should now be rejected
-        const meRes = await app.request("/api/account/me", {
-          headers: { Cookie: targetCookie },
-        });
-        expect(meRes.status).toBe(401);
+      // Target's existing session cookie should now be rejected
+      const meRes = await app.request("/api/account/me", {
+        headers: { Cookie: targetCookie },
       });
-    },
-    30_000,
-  );
+      expect(meRes.status).toBe(401);
+    });
+  }, 30_000);
 
-  it(
-    "admin cannot suspend themselves — 400",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-self-suspend-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+  it("admin cannot suspend themselves — 400", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-self-suspend-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        const adminRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, adminEmail));
-        const adminId = adminRows[0]?.id;
-        expect(adminId).toBeDefined();
+      const adminRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, adminEmail));
+      const adminId = adminRows[0]?.id;
+      expect(adminId).toBeDefined();
 
-        const res = await app.request(`/api/admin/users/${adminId}/suspend`, {
-          method: "POST",
-          headers: { Cookie: adminCookie },
-        });
-
-        expect(res.status).toBe(400);
+      const res = await app.request(`/api/admin/users/${adminId}/suspend`, {
+        method: "POST",
+        headers: { Cookie: adminCookie },
       });
-    },
-    30_000,
-  );
 
-  it(
-    "admin can unsuspend a user — clears bannedAt",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-unsuspend-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+      expect(res.status).toBe(400);
+    });
+  }, 30_000);
 
-        const targetEmail = `target-unsuspend-${Date.now()}@example.com`;
-        await signUp(app, targetEmail, "Password1!");
-        const targetRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, targetEmail));
-        const targetId = targetRows[0]?.id;
+  it("admin can unsuspend a user — clears bannedAt", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-unsuspend-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        // First suspend
-        await app.request(`/api/admin/users/${targetId}/suspend`, {
-          method: "POST",
-          headers: { Cookie: adminCookie },
-        });
+      const targetEmail = `target-unsuspend-${Date.now()}@example.com`;
+      await signUp(app, targetEmail, "Password1!");
+      const targetRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, targetEmail));
+      const targetId = targetRows[0]?.id;
 
-        // Then unsuspend
-        const res = await app.request(`/api/admin/users/${targetId}/unsuspend`, {
-          method: "POST",
-          headers: { Cookie: adminCookie },
-        });
-        expect(res.status).toBe(200);
-
-        // Verify bannedAt is null in DB
-        const updatedRows = await db.select({ bannedAt: schema.user.bannedAt }).from(schema.user).where(eq(schema.user.id, targetId));
-        expect(updatedRows[0]?.bannedAt).toBeNull();
+      // First suspend
+      await app.request(`/api/admin/users/${targetId}/suspend`, {
+        method: "POST",
+        headers: { Cookie: adminCookie },
       });
-    },
-    30_000,
-  );
+
+      // Then unsuspend
+      const res = await app.request(`/api/admin/users/${targetId}/unsuspend`, {
+        method: "POST",
+        headers: { Cookie: adminCookie },
+      });
+      expect(res.status).toBe(200);
+
+      // Verify bannedAt is null in DB
+      const updatedRows = await db
+        .select({ bannedAt: schema.user.bannedAt })
+        .from(schema.user)
+        .where(eq(schema.user.id, targetId));
+      expect(updatedRows[0]?.bannedAt).toBeNull();
+    });
+  }, 30_000);
 });
 
 // ---------------------------------------------------------------------------
@@ -457,178 +527,216 @@ describe("POST /api/admin/users/:userId/suspend + unsuspend", () => {
 // ---------------------------------------------------------------------------
 
 describe("POST /api/admin/users/:userId/impersonate", () => {
-  it(
-    "admin can impersonate a user — response includes session cookie for target user",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-impersonate-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+  it("admin can impersonate a user — response includes session cookie for target user", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-impersonate-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        const targetEmail = `target-imp-${Date.now()}@example.com`;
-        await signUp(app, targetEmail, "Password1!");
-        const targetRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, targetEmail));
-        const targetId = targetRows[0]?.id;
-        expect(targetId).toBeDefined();
+      const targetEmail = `target-imp-${Date.now()}@example.com`;
+      await signUp(app, targetEmail, "Password1!");
+      const targetRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, targetEmail));
+      const targetId = targetRows[0]?.id;
+      expect(targetId).toBeDefined();
 
-        const res = await app.request(`/api/admin/users/${targetId}/impersonate`, {
+      const res = await app.request(
+        `/api/admin/users/${targetId}/impersonate`,
+        {
           method: "POST",
           headers: { Cookie: adminCookie },
-        });
+        },
+      );
 
-        expect(res.status).toBe(200);
-        const cookie = res.headers.get("set-cookie");
-        expect(cookie).toBeTruthy();
+      expect(res.status).toBe(200);
+      const cookie = res.headers.get("set-cookie");
+      expect(cookie).toBeTruthy();
 
-        const body = await res.json() as { userId: string; impersonatedBy: string };
-        expect(body.userId).toBe(targetId);
-        expect(typeof body.impersonatedBy).toBe("string");
+      const body = (await res.json()) as {
+        userId: string;
+        impersonatedBy: string;
+      };
+      expect(body.userId).toBe(targetId);
+      expect(typeof body.impersonatedBy).toBe("string");
+    });
+  }, 30_000);
+
+  it("admin cannot impersonate themselves — 400", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-self-imp-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
+
+      const adminRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, adminEmail));
+      const adminId = adminRows[0]?.id;
+      expect(adminId).toBeDefined();
+
+      const res = await app.request(`/api/admin/users/${adminId}/impersonate`, {
+        method: "POST",
+        headers: { Cookie: adminCookie },
       });
-    },
-    30_000,
-  );
 
-  it(
-    "admin cannot impersonate themselves — 400",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-self-imp-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+      expect(res.status).toBe(400);
+    });
+  }, 30_000);
 
-        const adminRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, adminEmail));
-        const adminId = adminRows[0]?.id;
-        expect(adminId).toBeDefined();
+  it("admin cannot impersonate another admin — 400", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-imp-admin-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        const res = await app.request(`/api/admin/users/${adminId}/impersonate`, {
+      // Create a second admin
+      const secondAdminEmail = `admin2-imp-admin-${Date.now()}@example.com`;
+      await signUpAdmin(app, testDb, secondAdminEmail, "Password1!");
+      const secondAdminRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, secondAdminEmail));
+      const secondAdminId = secondAdminRows[0]?.id;
+      expect(secondAdminId).toBeDefined();
+
+      const res = await app.request(
+        `/api/admin/users/${secondAdminId}/impersonate`,
+        {
           method: "POST",
           headers: { Cookie: adminCookie },
-        });
+        },
+      );
 
-        expect(res.status).toBe(400);
+      expect(res.status).toBe(400);
+    });
+  }, 30_000);
+
+  it("admin cannot impersonate a suspended user — 400", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-imp-suspended-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
+
+      const targetEmail = `target-suspended-${Date.now()}@example.com`;
+      await signUp(app, targetEmail, "Password1!");
+      const targetRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, targetEmail));
+      const targetId = targetRows[0]?.id;
+      expect(targetId).toBeDefined();
+
+      // Suspend target first
+      const suspendRes = await app.request(
+        `/api/admin/users/${targetId}/suspend`,
+        {
+          method: "POST",
+          headers: { Cookie: adminCookie },
+        },
+      );
+      expect(suspendRes.status).toBe(200);
+
+      // Now try to impersonate the suspended user
+      const res = await app.request(
+        `/api/admin/users/${targetId}/impersonate`,
+        {
+          method: "POST",
+          headers: { Cookie: adminCookie },
+        },
+      );
+
+      expect(res.status).toBe(400);
+    });
+  }, 30_000);
+
+  it("impersonation session cookie returns target user data", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-imp-me-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
+
+      const targetEmail = `target-imp-me-${Date.now()}@example.com`;
+      await signUp(app, targetEmail, "Password1!");
+      const targetRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, targetEmail));
+      const targetId = targetRows[0]?.id;
+
+      // Impersonate
+      const impRes = await app.request(
+        `/api/admin/users/${targetId}/impersonate`,
+        {
+          method: "POST",
+          headers: { Cookie: adminCookie },
+        },
+      );
+      expect(impRes.status).toBe(200);
+      const impCookie = impRes.headers.get("set-cookie");
+      expect(impCookie).toBeTruthy();
+
+      // Use impersonation cookie to access /me — should see target user
+      const meRes = await app.request("/api/account/me", {
+        headers: { Cookie: impCookie as string },
       });
-    },
-    30_000,
-  );
-
-  it(
-    "admin cannot impersonate another admin — 400",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-imp-admin-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
-
-        // Create a second admin
-        const secondAdminEmail = `admin2-imp-admin-${Date.now()}@example.com`;
-        await signUpAdmin(app, testDb, secondAdminEmail, "Password1!");
-        const secondAdminRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, secondAdminEmail));
-        const secondAdminId = secondAdminRows[0]?.id;
-        expect(secondAdminId).toBeDefined();
-
-        const res = await app.request(`/api/admin/users/${secondAdminId}/impersonate`, {
-          method: "POST",
-          headers: { Cookie: adminCookie },
-        });
-
-        expect(res.status).toBe(400);
-      });
-    },
-    30_000,
-  );
-
-  it(
-    "admin cannot impersonate a suspended user — 400",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-imp-suspended-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
-
-        const targetEmail = `target-suspended-${Date.now()}@example.com`;
-        await signUp(app, targetEmail, "Password1!");
-        const targetRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, targetEmail));
-        const targetId = targetRows[0]?.id;
-        expect(targetId).toBeDefined();
-
-        // Suspend target first
-        const suspendRes = await app.request(`/api/admin/users/${targetId}/suspend`, {
-          method: "POST",
-          headers: { Cookie: adminCookie },
-        });
-        expect(suspendRes.status).toBe(200);
-
-        // Now try to impersonate the suspended user
-        const res = await app.request(`/api/admin/users/${targetId}/impersonate`, {
-          method: "POST",
-          headers: { Cookie: adminCookie },
-        });
-
-        expect(res.status).toBe(400);
-      });
-    },
-    30_000,
-  );
-
-  it(
-    "impersonation session cookie returns target user data",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-imp-me-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
-
-        const targetEmail = `target-imp-me-${Date.now()}@example.com`;
-        await signUp(app, targetEmail, "Password1!");
-        const targetRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, targetEmail));
-        const targetId = targetRows[0]?.id;
-
-        // Impersonate
-        const impRes = await app.request(`/api/admin/users/${targetId}/impersonate`, {
-          method: "POST",
-          headers: { Cookie: adminCookie },
-        });
-        expect(impRes.status).toBe(200);
-        const impCookie = impRes.headers.get("set-cookie");
-        expect(impCookie).toBeTruthy();
-
-        // Use impersonation cookie to access /me — should see target user
-        const meRes = await app.request("/api/account/me", {
-          headers: { Cookie: impCookie as string },
-        });
-        expect(meRes.status).toBe(200);
-        const meBody = await meRes.json() as { id: string; email: string };
-        expect(meBody.id).toBe(targetId);
-        expect(meBody.email).toBe(targetEmail);
-      });
-    },
-    30_000,
-  );
+      expect(meRes.status).toBe(200);
+      const meBody = (await meRes.json()) as { id: string; email: string };
+      expect(meBody.id).toBe(targetId);
+      expect(meBody.email).toBe(targetEmail);
+    });
+  }, 30_000);
 });
 
 // ---------------------------------------------------------------------------
@@ -636,66 +744,77 @@ describe("POST /api/admin/users/:userId/impersonate", () => {
 // ---------------------------------------------------------------------------
 
 describe("POST /api/admin/impersonate/exit", () => {
-  it(
-    "exit impersonation returns 400 when not in an impersonation session",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const app = await buildTestApp();
-        const adminEmail = `admin-exit-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+  it("exit impersonation returns 400 when not in an impersonation session", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const app = await buildTestApp();
+      const adminEmail = `admin-exit-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
 
-        const res = await app.request("/api/admin/impersonate/exit", {
+      const res = await app.request("/api/admin/impersonate/exit", {
+        method: "POST",
+        headers: { Cookie: adminCookie },
+      });
+
+      expect(res.status).toBe(400);
+    });
+  }, 30_000);
+
+  it("exit impersonation restores original admin session", async () => {
+    const { withTestDb } = await import("@starter/db/test-helpers");
+    await withTestDb(async (testDb) => {
+      const { schema } = await import("@starter/db");
+      const { eq } = await import("drizzle-orm");
+      // biome-ignore lint/suspicious/noExplicitAny: test helper
+      const db = testDb as any;
+      const app = await buildTestApp();
+      const adminEmail = `admin-exit2-${Date.now()}@example.com`;
+      const adminCookie = await signUpAdmin(
+        app,
+        testDb,
+        adminEmail,
+        "Password1!",
+      );
+
+      const targetEmail = `target-exit-${Date.now()}@example.com`;
+      await signUp(app, targetEmail, "Password1!");
+      const targetRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, targetEmail));
+      const targetId = targetRows[0]?.id;
+
+      // Get admin user id
+      const adminRows = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.email, adminEmail));
+      const adminId = adminRows[0]?.id;
+
+      // Impersonate target
+      const impRes = await app.request(
+        `/api/admin/users/${targetId}/impersonate`,
+        {
           method: "POST",
           headers: { Cookie: adminCookie },
-        });
+        },
+      );
+      expect(impRes.status).toBe(200);
+      const impCookie = impRes.headers.get("set-cookie") as string;
 
-        expect(res.status).toBe(400);
+      // Exit impersonation
+      const exitRes = await app.request("/api/admin/impersonate/exit", {
+        method: "POST",
+        headers: { Cookie: impCookie },
       });
-    },
-    30_000,
-  );
-
-  it(
-    "exit impersonation restores original admin session",
-    async () => {
-      const { withTestDb } = await import("@starter/db/test-helpers");
-      await withTestDb(async (testDb) => {
-        const { schema } = await import("@starter/db");
-        const { eq } = await import("drizzle-orm");
-        // biome-ignore lint/suspicious/noExplicitAny: test helper
-        const db = testDb as any;
-        const app = await buildTestApp();
-        const adminEmail = `admin-exit2-${Date.now()}@example.com`;
-        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
-
-        const targetEmail = `target-exit-${Date.now()}@example.com`;
-        await signUp(app, targetEmail, "Password1!");
-        const targetRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, targetEmail));
-        const targetId = targetRows[0]?.id;
-
-        // Get admin user id
-        const adminRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, adminEmail));
-        const adminId = adminRows[0]?.id;
-
-        // Impersonate target
-        const impRes = await app.request(`/api/admin/users/${targetId}/impersonate`, {
-          method: "POST",
-          headers: { Cookie: adminCookie },
-        });
-        expect(impRes.status).toBe(200);
-        const impCookie = impRes.headers.get("set-cookie") as string;
-
-        // Exit impersonation
-        const exitRes = await app.request("/api/admin/impersonate/exit", {
-          method: "POST",
-          headers: { Cookie: impCookie },
-        });
-        expect(exitRes.status).toBe(200);
-        const exitBody = await exitRes.json() as { userId: string };
-        expect(exitBody.userId).toBe(adminId);
-      });
-    },
-    30_000,
-  );
+      expect(exitRes.status).toBe(200);
+      const exitBody = (await exitRes.json()) as { userId: string };
+      expect(exitBody.userId).toBe(adminId);
+    });
+  }, 30_000);
 });

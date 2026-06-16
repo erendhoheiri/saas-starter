@@ -13,10 +13,11 @@
  *
  * All DB imports are lazy to keep this module safe in test environments.
  */
-import type { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
+
 import { createId } from "@paralleldrive/cuid2";
+import type { Context } from "hono";
 import { setSignedCookie } from "hono/cookie";
+import { HTTPException } from "hono/http-exception";
 
 // ---------------------------------------------------------------------------
 // GET /users — list / search users (paginated)
@@ -27,7 +28,10 @@ export async function listUsersHandler(c: Context) {
   const { ilike, or, sql } = await import("drizzle-orm");
 
   const page = Math.max(1, Number(c.req.query("page") ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, Number(c.req.query("limit") ?? "20") || 20));
+  const limit = Math.min(
+    100,
+    Math.max(1, Number(c.req.query("limit") ?? "20") || 20),
+  );
   const q = c.req.query("q");
   const offset = (page - 1) * limit;
 
@@ -70,12 +74,18 @@ export async function listOrgsHandler(c: Context) {
   const { ilike, or, sql } = await import("drizzle-orm");
 
   const page = Math.max(1, Number(c.req.query("page") ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, Number(c.req.query("limit") ?? "20") || 20));
+  const limit = Math.min(
+    100,
+    Math.max(1, Number(c.req.query("limit") ?? "20") || 20),
+  );
   const q = c.req.query("q");
   const offset = (page - 1) * limit;
 
   const whereClause = q
-    ? or(ilike(schema.organization.name, `%${q}%`), ilike(schema.organization.slug, `%${q}%`))
+    ? or(
+        ilike(schema.organization.name, `%${q}%`),
+        ilike(schema.organization.slug, `%${q}%`),
+      )
     : undefined;
 
   const [data, countResult] = await Promise.all([
@@ -175,7 +185,11 @@ async function setSessionTokenCookie(
   authSecret?: string,
 ) {
   const secret =
-    authSecret ?? (await import("@starter/shared").then(({ parseEnv }) => parseEnv().AUTH_SECRET)) ?? "";
+    authSecret ??
+    (await import("@starter/shared").then(
+      ({ parseEnv }) => parseEnv().AUTH_SECRET,
+    )) ??
+    "";
   await setSignedCookie(c, SESSION_COOKIE_NAME, token, secret, {
     path: "/",
     httpOnly: true,
@@ -218,7 +232,11 @@ export async function impersonateUserHandler(c: Context) {
 
   // Verify target user exists
   const targetRows = await db
-    .select({ id: schema.user.id, bannedAt: schema.user.bannedAt, role: schema.user.role })
+    .select({
+      id: schema.user.id,
+      bannedAt: schema.user.bannedAt,
+      role: schema.user.role,
+    })
     .from(schema.user)
     .where(eq(schema.user.id, targetUserId))
     .limit(1);
@@ -233,12 +251,16 @@ export async function impersonateUserHandler(c: Context) {
   }
 
   if (target.role === "admin") {
-    throw new HTTPException(400, { message: "Cannot impersonate another admin" });
+    throw new HTTPException(400, {
+      message: "Cannot impersonate another admin",
+    });
   }
 
   // Prevent impersonating a banned user
   if (target.bannedAt) {
-    throw new HTTPException(400, { message: "Cannot impersonate a suspended user" });
+    throw new HTTPException(400, {
+      message: "Cannot impersonate a suspended user",
+    });
   }
 
   const token = createId();
@@ -311,7 +333,9 @@ export async function exitImpersonationHandler(c: Context) {
   const sessionRow = sessionRows[0];
 
   if (!sessionRow || !sessionRow.impersonatedBy) {
-    throw new HTTPException(400, { message: "Not in an impersonation session" });
+    throw new HTTPException(400, {
+      message: "Not in an impersonation session",
+    });
   }
 
   const adminUserId = sessionRow.impersonatedBy;
@@ -324,11 +348,20 @@ export async function exitImpersonationHandler(c: Context) {
   const { parseEnv } = await import("@starter/shared");
   const { AUTH_SECRET } = parseEnv();
 
-  const adminSessionToken = await getSignedCookie(c, AUTH_SECRET, "better-auth.admin_session");
+  const adminSessionToken = await getSignedCookie(
+    c,
+    AUTH_SECRET,
+    "better-auth.admin_session",
+  );
 
   if (adminSessionToken) {
     // Restore the admin's session cookie
-    await setSessionTokenCookie(c, adminSessionToken, 7 * 24 * 60 * 60, AUTH_SECRET);
+    await setSessionTokenCookie(
+      c,
+      adminSessionToken,
+      7 * 24 * 60 * 60,
+      AUTH_SECRET,
+    );
     // Clear the admin_session cookie
     await setSignedCookie(c, "better-auth.admin_session", "", AUTH_SECRET, {
       path: "/",
@@ -340,7 +373,10 @@ export async function exitImpersonationHandler(c: Context) {
   } else {
     // Cookie not available — fall back to DB lookup of admin's most recent session
     const adminSessions = await db
-      .select({ token: schema.session.token, expiresAt: schema.session.expiresAt })
+      .select({
+        token: schema.session.token,
+        expiresAt: schema.session.expiresAt,
+      })
       .from(schema.session)
       .where(
         and(
@@ -354,7 +390,9 @@ export async function exitImpersonationHandler(c: Context) {
     const adminSession = adminSessions[0];
 
     if (adminSession && adminSession.expiresAt > new Date()) {
-      const maxAge = Math.floor((adminSession.expiresAt.getTime() - Date.now()) / 1000);
+      const maxAge = Math.floor(
+        (adminSession.expiresAt.getTime() - Date.now()) / 1000,
+      );
       await setSessionTokenCookie(c, adminSession.token, maxAge, AUTH_SECRET);
     } else {
       // No valid admin session found — clear the cookie

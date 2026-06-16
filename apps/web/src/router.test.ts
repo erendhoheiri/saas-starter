@@ -13,8 +13,8 @@
  *   getSession returns no data, and passes through when it does.
  */
 
-import { describe, it, expect } from "bun:test"
-import { redirect, isRedirect } from "@tanstack/react-router"
+import { describe, expect, it } from "bun:test";
+import { isRedirect, redirect } from "@tanstack/react-router";
 
 // ---------------------------------------------------------------------------
 // Route-tree smoke test
@@ -22,25 +22,25 @@ import { redirect, isRedirect } from "@tanstack/react-router"
 
 describe("router", () => {
   it("creates without errors and has a defined route tree", async () => {
-    const { router } = await import("./router")
-    expect(router).toBeDefined()
-    expect(router.routeTree).toBeDefined()
-  })
+    const { router } = await import("./router");
+    expect(router).toBeDefined();
+    expect(router.routeTree).toBeDefined();
+  });
 
   it("route tree includes expected paths", async () => {
-    const { router } = await import("./router")
+    const { router } = await import("./router");
     // router.routesByPath maps full paths to route objects
-    const paths = Object.keys(router.routesByPath)
-    expect(paths).toContain("/login")
-    expect(paths).toContain("/signup")
-    expect(paths).toContain("/dashboard")
-    expect(paths).toContain("/settings")
-    expect(paths).toContain("/org")
-    expect(paths).toContain("/admin/users")
-    expect(paths).toContain("/admin/orgs")
-    expect(paths).toContain("/403")
-  })
-})
+    const paths = Object.keys(router.routesByPath);
+    expect(paths).toContain("/login");
+    expect(paths).toContain("/signup");
+    expect(paths).toContain("/dashboard");
+    expect(paths).toContain("/settings");
+    expect(paths).toContain("/org");
+    expect(paths).toContain("/admin/users");
+    expect(paths).toContain("/admin/orgs");
+    expect(paths).toContain("/403");
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Auth guard unit tests
@@ -48,41 +48,41 @@ describe("router", () => {
 
 describe("app layout auth guard", () => {
   it("redirects to /login when session is null", async () => {
-    const getSession = async () => ({ data: null })
-    const location = { href: "/dashboard" }
+    const getSession = async () => ({ data: null });
+    const location = { href: "/dashboard" };
 
-    let threw: unknown
+    let threw: unknown;
     try {
-      const session = await getSession()
+      const session = await getSession();
       if (!session.data) {
-        throw redirect({ to: "/login", search: { redirect: location.href } })
+        throw redirect({ to: "/login", search: { redirect: location.href } });
       }
     } catch (err) {
-      threw = err
+      threw = err;
     }
 
-    expect(threw).toBeDefined()
-    expect(isRedirect(threw)).toBe(true)
-  })
+    expect(threw).toBeDefined();
+    expect(isRedirect(threw)).toBe(true);
+  });
 
   it("does not redirect when session is present", async () => {
     const getSession = async () => ({
       data: { user: { id: "u1", role: "user" } },
-    })
+    });
 
-    let threw: unknown
+    let threw: unknown;
     try {
-      const session = await getSession()
+      const session = await getSession();
       if (!session.data) {
-        throw redirect({ to: "/login", search: { redirect: "/" } })
+        throw redirect({ to: "/login", search: { redirect: "/" } });
       }
     } catch (err) {
-      threw = err
+      threw = err;
     }
 
-    expect(threw).toBeUndefined()
-  })
-})
+    expect(threw).toBeUndefined();
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Admin guard unit tests
@@ -90,62 +90,62 @@ describe("app layout auth guard", () => {
 
 describe("admin layout auth guard", () => {
   it("redirects to /login when session is null", async () => {
-    const getSession = async () => ({ data: null })
+    const getSession = async () => ({ data: null });
 
-    let threw: unknown
+    let threw: unknown;
     try {
-      const session = await getSession()
+      const session = await getSession();
       if (!session.data) {
-        throw redirect({ to: "/login", search: { redirect: "/admin/users" } })
+        throw redirect({ to: "/login", search: { redirect: "/admin/users" } });
       }
     } catch (err) {
-      threw = err
+      threw = err;
     }
 
-    expect(isRedirect(threw)).toBe(true)
-  })
+    expect(isRedirect(threw)).toBe(true);
+  });
 
   it("redirects to /403 when user is not admin", async () => {
     const getSession = async () => ({
       data: { user: { id: "u1", role: "user" } },
-    })
+    });
 
-    let threw: unknown
+    let threw: unknown;
     try {
-      const session = await getSession()
+      const session = await getSession();
       if (!session.data) {
-        throw redirect({ to: "/login", search: { redirect: "/admin/users" } })
+        throw redirect({ to: "/login", search: { redirect: "/admin/users" } });
       }
-      const role = (session.data.user as { role?: string }).role
+      const role = (session.data.user as { role?: string }).role;
       if (role !== "admin") {
-        throw redirect({ to: "/403" })
+        throw redirect({ to: "/403" });
       }
     } catch (err) {
-      threw = err
+      threw = err;
     }
 
-    expect(isRedirect(threw)).toBe(true)
-  })
+    expect(isRedirect(threw)).toBe(true);
+  });
 
   it("allows access when user is admin", async () => {
     const getSession = async () => ({
       data: { user: { id: "u1", role: "admin" } },
-    })
+    });
 
-    let threw: unknown
+    let threw: unknown;
     try {
-      const session = await getSession()
+      const session = await getSession();
       if (!session.data) {
-        throw redirect({ to: "/login", search: { redirect: "/admin/users" } })
+        throw redirect({ to: "/login", search: { redirect: "/admin/users" } });
       }
-      const role = (session.data.user as { role?: string }).role
+      const role = (session.data.user as { role?: string }).role;
       if (role !== "admin") {
-        throw redirect({ to: "/403" })
+        throw redirect({ to: "/403" });
       }
     } catch (err) {
-      threw = err
+      threw = err;
     }
 
-    expect(threw).toBeUndefined()
-  })
-})
+    expect(threw).toBeUndefined();
+  });
+});

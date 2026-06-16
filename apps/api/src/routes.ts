@@ -14,9 +14,9 @@
  * this module; the frontend imports it as `import type { AppType }`.
  */
 import { Hono } from "hono";
-import { organizationsRouter } from "./modules/organizations/routes";
 import { accountRouter } from "./modules/account/routes";
 import { adminRouter } from "./modules/admin/routes";
+import { organizationsRouter } from "./modules/organizations/routes";
 
 const routes = new Hono()
   .route("/api/organizations", organizationsRouter)

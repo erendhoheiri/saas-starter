@@ -1,1 +1,7 @@
-export { authClient, useSession, signIn, signOut, organization } from "@starter/auth/client"
+export {
+  authClient,
+  organization,
+  signIn,
+  signOut,
+  useSession,
+} from "@starter/auth/client";

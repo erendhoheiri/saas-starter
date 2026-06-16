@@ -17,7 +17,9 @@ interface EmailEnv {
   RESEND_API_KEY?: string;
 }
 
-export function createEmailProvider(env: EmailEnv = process.env): EmailProvider {
+export function createEmailProvider(
+  env: EmailEnv = process.env as unknown as EmailEnv,
+): EmailProvider {
   if (env.EMAIL_PROVIDER === "resend") {
     return new ResendEmailProvider(env.RESEND_API_KEY);
   }

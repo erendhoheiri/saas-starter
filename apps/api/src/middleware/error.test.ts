@@ -13,7 +13,9 @@ describe("error middleware (onError handler)", () => {
 
     const res = await app.request("/");
     expect(res.status).toBe(500);
-    const body = await res.json<{ error: { code: string; message: string } }>();
+    const body = (await res.json()) as {
+      error: { code: string; message: string };
+    };
     expect(body.error).toBeDefined();
     expect(body.error.code).toBe("INTERNAL_SERVER_ERROR");
     expect(typeof body.error.message).toBe("string");
@@ -28,7 +30,9 @@ describe("error middleware (onError handler)", () => {
 
     const res = await app.request("/");
     expect(res.status).toBe(403);
-    const body = await res.json<{ error: { code: string; message: string } }>();
+    const body = (await res.json()) as {
+      error: { code: string; message: string };
+    };
     expect(body.error.code).toBe("FORBIDDEN");
     expect(body.error.message).toBe("Forbidden");
   });
@@ -45,7 +49,9 @@ describe("error middleware (onError handler)", () => {
       });
 
       const res = await app.request("/");
-      const body = await res.json<{ error: { code: string; message: string; stack?: string } }>();
+      const body = (await res.json()) as {
+        error: { code: string; message: string; stack?: string };
+      };
       expect(body.error.stack).toBeUndefined();
       expect(body.error.message).not.toContain("secret internal detail");
     } finally {
@@ -65,7 +71,9 @@ describe("error middleware (onError handler)", () => {
       });
 
       const res = await app.request("/");
-      const body = await res.json<{ error: { code: string; message: string } }>();
+      const body = (await res.json()) as {
+        error: { code: string; message: string };
+      };
       expect(body.error.message).toBe("detailed error");
     } finally {
       process.env.NODE_ENV = originalEnv;
@@ -92,7 +100,7 @@ describe("error middleware (onError handler)", () => {
 
     const res = await app.request("/");
     expect(res.status).toBe(401);
-    const body = await res.json<{ error: { code: string } }>();
+    const body = (await res.json()) as { error: { code: string } };
     expect(body.error.code).toBe("UNAUTHORIZED");
   });
 
@@ -105,7 +113,7 @@ describe("error middleware (onError handler)", () => {
 
     const res = await app.request("/");
     expect(res.status).toBe(404);
-    const body = await res.json<{ error: { code: string } }>();
+    const body = (await res.json()) as { error: { code: string } };
     expect(body.error.code).toBe("NOT_FOUND");
   });
 });

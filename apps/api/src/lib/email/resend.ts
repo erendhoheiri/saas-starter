@@ -13,7 +13,9 @@ export class ResendEmailProvider implements EmailProvider {
     }
 
     // Dynamically import resend only when an API key is available
-    const { Resend } = await import("resend");
+    // biome-ignore lint/suspicious/noExplicitAny: resend is an optional peer dependency
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { Resend } = await import("resend" as any);
     const resend = new Resend(this.apiKey);
 
     await resend.emails.send({

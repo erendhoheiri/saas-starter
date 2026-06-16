@@ -1,30 +1,29 @@
-import { createRoute, Link } from "@tanstack/react-router"
-import { useNavigate } from "@tanstack/react-router"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { authClient } from "@/lib/auth"
-import { rootRoute } from "@/router"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth";
+import { rootRoute } from "@/router";
 
 export const signupSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email(),
   password: z.string().min(8, "Password must be at least 8 characters"),
-})
+});
 
-export type SignupForm = z.infer<typeof signupSchema>
+export type SignupForm = z.infer<typeof signupSchema>;
 
 export const signupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/signup",
   component: SignupPage,
-})
+});
 
 function SignupPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -32,20 +31,20 @@ function SignupPage() {
     setError,
   } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
-  })
+  });
 
   const onSubmit = async (data: SignupForm) => {
     const result = await authClient.signUp.email({
       name: data.name,
       email: data.email,
       password: data.password,
-    })
+    });
     if (result.error) {
-      setError("root", { message: result.error.message ?? "Sign up failed" })
-      return
+      setError("root", { message: result.error.message ?? "Sign up failed" });
+      return;
     }
-    navigate({ to: "/dashboard" })
-  }
+    navigate({ to: "/dashboard" });
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -63,7 +62,11 @@ function SignupPage() {
             {errors.email && (
               <p className="text-red-500 text-sm">{errors.email.message}</p>
             )}
-            <Input type="password" placeholder="Password" {...register("password")} />
+            <Input
+              type="password"
+              placeholder="Password"
+              {...register("password")}
+            />
             {errors.password && (
               <p className="text-red-500 text-sm">{errors.password.message}</p>
             )}
@@ -76,12 +79,15 @@ function SignupPage() {
           </form>
           <p className="mt-4 text-center text-sm">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              to="/login"
+              className="text-primary underline-offset-4 hover:underline"
+            >
               Sign in
             </Link>
           </p>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

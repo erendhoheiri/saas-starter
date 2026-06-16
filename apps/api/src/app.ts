@@ -54,7 +54,9 @@ app.all("/api/auth/*", async (c) => {
   let _router: Hono | null = null;
   orgsProxy.all("/*", async (c) => {
     if (!_router) {
-      const { organizationsRouter } = await import("./modules/organizations/routes");
+      const { organizationsRouter } = await import(
+        "./modules/organizations/routes"
+      );
       _router = organizationsRouter;
     }
     return _router.fetch(c.req.raw, c.env);

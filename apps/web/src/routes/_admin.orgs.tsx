@@ -1,54 +1,63 @@
-import { createRoute } from "@tanstack/react-router"
-import { adminLayoutRoute } from "@/routes/_admin"
-import { useQuery } from "@tanstack/react-query"
-import { useState, useEffect } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { api as _api } from "@/lib/api"
+import { useQuery } from "@tanstack/react-query";
+import { createRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { api as _api } from "@/lib/api";
+import { adminLayoutRoute } from "@/routes/_admin";
 
 export const adminOrgsRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/admin/orgs",
   component: AdminOrgsPage,
-})
+});
 
 type AdminOrg = {
-  id: string
-  name: string
-  slug: string
-  deletedAt: string | Date | null
-  createdAt: string | Date
-}
+  id: string;
+  name: string;
+  slug: string;
+  deletedAt: string | Date | null;
+  createdAt: string | Date;
+};
 
 function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value)
+  const [debounced, setDebounced] = useState(value);
   useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay)
-    return () => clearTimeout(timer)
-  }, [value, delay])
-  return debounced
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
 }
 
 function AdminOrgsPage() {
-  const [search, setSearch] = useState("")
-  const [page, setPage] = useState(1)
-  const debouncedSearch = useDebounce(search, 300)
-  const api = _api as any
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(search, 300);
+  const api = _api as any;
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-orgs", debouncedSearch, page],
     queryFn: async () => {
       const res = await api.api.admin.orgs.$get({
-        query: { q: debouncedSearch || undefined, page: String(page), limit: "20" },
-      })
-      return res.json() as Promise<{ data: AdminOrg[]; total: number; page: number; limit: number }>
+        query: {
+          q: debouncedSearch || undefined,
+          page: String(page),
+          limit: "20",
+        },
+      });
+      return res.json() as Promise<{
+        data: AdminOrg[];
+        total: number;
+        page: number;
+        limit: number;
+      }>;
     },
-  })
+  });
 
-  const orgs = data?.data ?? []
-  const total = data?.total ?? 0
-  const limit = data?.limit ?? 20
-  const totalPages = Math.max(1, Math.ceil(total / limit))
+  const orgs = data?.data ?? [];
+  const total = data?.total ?? 0;
+  const limit = data?.limit ?? 20;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
     <div className="p-8">
@@ -58,8 +67,8 @@ function AdminOrgsPage() {
           placeholder="Search by name or slug..."
           value={search}
           onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(1)
+            setSearch(e.target.value);
+            setPage(1);
           }}
           className="max-w-sm"
         />
@@ -133,5 +142,5 @@ function AdminOrgsPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

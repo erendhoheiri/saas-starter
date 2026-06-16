@@ -1,5 +1,5 @@
-import { auth } from "@starter/auth";
 import type { Session, User } from "@starter/auth";
+import { auth } from "@starter/auth";
 import type { MiddlewareHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 

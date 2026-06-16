@@ -18,7 +18,7 @@ interface StorageEnv {
 }
 
 export function createStorageProvider(
-  env: StorageEnv = process.env,
+  env: StorageEnv = process.env as unknown as StorageEnv,
 ): StorageProvider {
   if (env.STORAGE_PROVIDER === "s3") {
     return new S3StorageProvider({
