@@ -1,5 +1,5 @@
 import { createRoute, Outlet, redirect } from "@tanstack/react-router";
-import { Nav } from "@/components/nav";
+import { AppSidebar } from "@/components/app-sidebar";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";
 
@@ -18,9 +18,9 @@ export const appLayoutRoute = createRoute({
 
 function AppLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-muted text-foreground">
-      <Nav />
-      <main className="flex-1 p-6">
+    <div className="flex min-h-screen">
+      <AppSidebar />
+      <main className="flex-1 bg-muted overflow-y-auto">
         <Outlet />
       </main>
     </div>
