@@ -1,3 +1,4 @@
+import { z } from "zod"
 import { createRoute, Link, useSearch } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { authClient } from "@/lib/auth"
@@ -10,8 +11,6 @@ export const verifyEmailRoute = createRoute({
   validateSearch: z.object({ token: z.string().optional() }),
   component: VerifyEmailPage,
 })
-
-import { z } from "zod"
 
 type VerifyStatus = "idle" | "verifying" | "success" | "error"
 
