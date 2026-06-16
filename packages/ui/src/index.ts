@@ -1,4 +1,5 @@
 export { Alert, AlertDescription, AlertTitle } from "./components/alert";
+export { Avatar, AvatarFallback, AvatarImage } from "./components/avatar";
 export { Badge, badgeVariants } from "./components/badge";
 export {
   Breadcrumb,
@@ -19,6 +20,7 @@ export {
   CardHeader,
   CardTitle,
 } from "./components/card";
+export { Checkbox } from "./components/checkbox";
 export {
   Dialog,
   DialogClose,
@@ -50,8 +52,10 @@ export {
 } from "./components/dropdown-menu";
 export { Input } from "./components/input";
 export { Label } from "./components/label";
+export { RadioGroup, RadioGroupItem } from "./components/radio-group";
 export { Separator } from "./components/separator";
 export { Skeleton } from "./components/skeleton";
+export { Switch } from "./components/switch";
 export {
   Table,
   TableBody,
