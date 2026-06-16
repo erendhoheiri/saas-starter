@@ -18,7 +18,7 @@ export const appLayoutRoute = createRoute({
 
 function AppLayout() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-muted text-foreground">
       <Nav />
       <main className="flex-1 p-6">
         <Outlet />

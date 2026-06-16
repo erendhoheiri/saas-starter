@@ -3,6 +3,7 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   Input,
@@ -52,20 +53,23 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create account</CardTitle>
+          <CardDescription>
+            Get started — it only takes a minute
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input type="text" placeholder="Full name" {...register("name")} />
             {errors.name && (
-              <p className="text-red-500 text-sm">{errors.name.message}</p>
+              <p className="text-destructive text-sm">{errors.name.message}</p>
             )}
             <Input type="email" placeholder="Email" {...register("email")} />
             {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email.message}</p>
+              <p className="text-destructive text-sm">{errors.email.message}</p>
             )}
             <Input
               type="password"
@@ -73,10 +77,12 @@ function SignupPage() {
               {...register("password")}
             />
             {errors.password && (
-              <p className="text-red-500 text-sm">{errors.password.message}</p>
+              <p className="text-destructive text-sm">
+                {errors.password.message}
+              </p>
             )}
             {errors.root && (
-              <p className="text-red-500 text-sm">{errors.root.message}</p>
+              <p className="text-destructive text-sm">{errors.root.message}</p>
             )}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Creating account..." : "Create account"}

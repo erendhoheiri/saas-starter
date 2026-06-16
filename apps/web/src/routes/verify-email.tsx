@@ -44,7 +44,7 @@ function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Email verification</CardTitle>
@@ -70,7 +70,7 @@ function VerifyEmailPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-red-500">{errorMessage}</p>
+              <p className="text-sm text-destructive">{errorMessage}</p>
               <p className="text-center text-sm">
                 <Link
                   to="/login"

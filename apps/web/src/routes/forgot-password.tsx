@@ -49,7 +49,7 @@ function ForgotPasswordPage() {
 
   if (isSubmitSuccessful) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Check your email</CardTitle>
@@ -74,7 +74,7 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Forgot password</CardTitle>
@@ -87,10 +87,10 @@ function ForgotPasswordPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input type="email" placeholder="Email" {...register("email")} />
             {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email.message}</p>
+              <p className="text-destructive text-sm">{errors.email.message}</p>
             )}
             {errors.root && (
-              <p className="text-red-500 text-sm">{errors.root.message}</p>
+              <p className="text-destructive text-sm">{errors.root.message}</p>
             )}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Sending..." : "Send reset link"}
