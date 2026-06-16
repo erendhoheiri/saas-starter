@@ -9,6 +9,9 @@ export const rootRoute = createRootRoute({
 import { indexRoute } from "@/routes/index"
 import { loginRoute } from "@/routes/login"
 import { signupRoute } from "@/routes/signup"
+import { forgotPasswordRoute } from "@/routes/forgot-password"
+import { resetPasswordRoute } from "@/routes/reset-password"
+import { verifyEmailRoute } from "@/routes/verify-email"
 import { forbiddenRoute } from "@/routes/403"
 import { appLayoutRoute } from "@/routes/_app"
 import { dashboardRoute } from "@/routes/_app.dashboard"
@@ -22,6 +25,9 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   signupRoute,
+  forgotPasswordRoute,
+  resetPasswordRoute,
+  verifyEmailRoute,
   forbiddenRoute,
   appLayoutRoute.addChildren([dashboardRoute, settingsRoute, orgRoute]),
   adminLayoutRoute.addChildren([adminUsersRoute, adminOrgsRoute]),
