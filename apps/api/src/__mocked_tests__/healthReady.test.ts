@@ -52,7 +52,7 @@ describe("GET /health/ready", () => {
   it("returns 503 with generic message when DB is unreachable", async () => {
     const { Hono } = await import("hono");
     const { sql } = await import("drizzle-orm");
-    const { errorHandler } = await import("./error");
+    const { errorHandler } = await import("../middleware/error");
     const { captureError } = await import("../lib/logger");
 
     mock.module("@starter/db", () => ({
