@@ -1,4 +1,5 @@
 export { Alert, AlertDescription, AlertTitle } from "./components/alert";
+export { AspectRatio } from "./components/aspect-ratio";
 export { Avatar, AvatarFallback, AvatarImage } from "./components/avatar";
 export { Badge, badgeVariants } from "./components/badge";
 export {
@@ -52,9 +53,24 @@ export {
 } from "./components/dropdown-menu";
 export { Input } from "./components/input";
 export { Label } from "./components/label";
+export { Progress } from "./components/progress";
 export { RadioGroup, RadioGroupItem } from "./components/radio-group";
+export { ScrollArea, ScrollBar } from "./components/scroll-area";
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectScrollDownButton,
+  SelectScrollUpButton,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "./components/select";
 export { Separator } from "./components/separator";
 export { Skeleton } from "./components/skeleton";
+export { Slider } from "./components/slider";
 export { Switch } from "./components/switch";
 export {
   Table,
