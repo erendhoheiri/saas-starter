@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  /* Primitives — raw scales, never used directly in components */
+  --color-slate-50: oklch(0.984 0.003 247.858);
+  --color-slate-100: oklch(0.968 0.007 247.896);
+  --color-slate-200: oklch(0.929 0.013 255.508);
+  --color-slate-300: oklch(0.869 0.022 252.894);
+  --color-slate-400: oklch(0.704 0.04 256.788);
+  --color-slate-500: oklch(0.554 0.046 257.417);
+  --color-slate-600: oklch(0.446 0.043 257.281);
+  --color-slate-700: oklch(0.372 0.044 257.287);
+  --color-slate-800: oklch(0.279 0.041 260.031);
+  --color-slate-900: oklch(0.208 0.042 265.755);
+  --color-slate-950: oklch(0.129 0.042 264.695);
+
+  /* Semantic tokens — light mode defaults */
+  --color-background: var(--color-slate-50);
+  --color-foreground: var(--color-slate-950);
+
+  --color-card: var(--color-slate-50);
+  --color-card-foreground: var(--color-slate-950);
+
+  --color-primary: oklch(0.585 0.233 277.117); /* indigo-500 */
+  --color-primary-foreground: oklch(1 0 0);
+
+  --color-secondary: var(--color-slate-100);
+  --color-secondary-foreground: var(--color-slate-900);
+
+  --color-muted: var(--color-slate-100);
+  --color-muted-foreground: var(--color-slate-500);
+
+  --color-accent: var(--color-slate-100);
+  --color-accent-foreground: var(--color-slate-900);
+
+  --color-destructive: oklch(0.577 0.245 27.325); /* red-500 */
+  --color-destructive-foreground: oklch(1 0 0);
+
+  --color-border: var(--color-slate-200);
+  --color-input: var(--color-slate-200);
+  --color-ring: var(--color-primary);
+
+  /* Shape */
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+}
+
+/* Dark mode — only semantic tokens flip */
+.dark {
+  --color-background: var(--color-slate-950);
+  --color-foreground: var(--color-slate-50);
+
+  --color-card: var(--color-slate-900);
+  --color-card-foreground: var(--color-slate-50);
+
+  --color-secondary: var(--color-slate-800);
+  --color-secondary-foreground: var(--color-slate-50);
+
+  --color-muted: var(--color-slate-800);
+  --color-muted-foreground: var(--color-slate-400);
+
+  --color-accent: var(--color-slate-800);
+  --color-accent-foreground: var(--color-slate-50);
+
+  --color-border: var(--color-slate-800);
+  --color-input: var(--color-slate-800);
+}
