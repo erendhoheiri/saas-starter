@@ -67,14 +67,16 @@ export async function listUsersHandler(c: Context) {
 
 export async function listOrgsHandler(c: Context) {
   const { db, schema } = await import("@starter/db");
-  const { ilike, sql } = await import("drizzle-orm");
+  const { ilike, or, sql } = await import("drizzle-orm");
 
   const page = Math.max(1, Number(c.req.query("page") ?? "1") || 1);
   const limit = Math.min(100, Math.max(1, Number(c.req.query("limit") ?? "20") || 20));
   const q = c.req.query("q");
   const offset = (page - 1) * limit;
 
-  const whereClause = q ? ilike(schema.organization.name, `%${q}%`) : undefined;
+  const whereClause = q
+    ? or(ilike(schema.organization.name, `%${q}%`), ilike(schema.organization.slug, `%${q}%`))
+    : undefined;
 
   const [data, countResult] = await Promise.all([
     db
@@ -107,6 +109,11 @@ export async function listOrgsHandler(c: Context) {
 
 export async function suspendUserHandler(c: Context) {
   const userId = c.req.param("userId");
+
+  if (userId === c.get("user").id) {
+    throw new HTTPException(400, { message: "Cannot suspend yourself" });
+  }
+
   const { db, schema } = await import("@starter/db");
   const { eq } = await import("drizzle-orm");
 
@@ -161,10 +168,15 @@ const SESSION_COOKIE_NAME = "better-auth.session_token";
  * Hono's signed cookie format: `encodedValue.base64(HMAC-SHA256(rawValue, secret))`
  * This matches the format Better Auth reads via `ctx.getSignedCookie()`.
  */
-async function setSessionTokenCookie(c: Context, token: string, maxAgeSeconds: number) {
-  const { parseEnv } = await import("@starter/shared");
-  const env = parseEnv();
-  await setSignedCookie(c, SESSION_COOKIE_NAME, token, env.AUTH_SECRET, {
+async function setSessionTokenCookie(
+  c: Context,
+  token: string,
+  maxAgeSeconds: number,
+  authSecret?: string,
+) {
+  const secret =
+    authSecret ?? (await import("@starter/shared").then(({ parseEnv }) => parseEnv().AUTH_SECRET));
+  await setSignedCookie(c, SESSION_COOKIE_NAME, token, secret, {
     path: "/",
     httpOnly: true,
     sameSite: "Lax",
@@ -198,12 +210,15 @@ export async function impersonateUserHandler(c: Context) {
   const actingAdminSession = c.get("session");
   const targetUserId = c.req.param("userId");
 
+  const { parseEnv } = await import("@starter/shared");
+  const { AUTH_SECRET } = parseEnv();
+
   const { db, schema } = await import("@starter/db");
   const { eq } = await import("drizzle-orm");
 
   // Verify target user exists
   const targetRows = await db
-    .select({ id: schema.user.id, bannedAt: schema.user.bannedAt })
+    .select({ id: schema.user.id, bannedAt: schema.user.bannedAt, role: schema.user.role })
     .from(schema.user)
     .where(eq(schema.user.id, targetUserId))
     .limit(1);
@@ -211,6 +226,14 @@ export async function impersonateUserHandler(c: Context) {
   const target = targetRows[0];
   if (!target) {
     throw new HTTPException(404, { message: "Target user not found" });
+  }
+
+  if (targetUserId === actingAdmin.id) {
+    throw new HTTPException(400, { message: "Cannot impersonate yourself" });
+  }
+
+  if (target.role === "admin") {
+    throw new HTTPException(400, { message: "Cannot impersonate another admin" });
   }
 
   // Prevent impersonating a banned user
@@ -229,21 +252,18 @@ export async function impersonateUserHandler(c: Context) {
     impersonatedBy: actingAdmin.id,
   });
 
-  const { parseEnv } = await import("@starter/shared");
-  const env = parseEnv();
-
   // Set the impersonation session cookie first (signed, readable by Better Auth).
   // Setting it first ensures it is the first Set-Cookie header — tests and clients
   // that only read the first Set-Cookie value (e.g. Headers.get("set-cookie"))
   // will correctly receive the impersonation session token.
-  await setSessionTokenCookie(c, token, 60 * 60);
+  await setSessionTokenCookie(c, token, 60 * 60, AUTH_SECRET);
 
   // Store the admin's current session token so exit can restore it.
   await setSignedCookie(
     c,
     "better-auth.admin_session",
     actingAdminSession.token,
-    env.AUTH_SECRET,
+    AUTH_SECRET,
     {
       path: "/",
       httpOnly: true,
@@ -302,15 +322,15 @@ export async function exitImpersonationHandler(c: Context) {
   // Try admin_session cookie first (set during impersonation)
   const { getSignedCookie, setCookie } = await import("hono/cookie");
   const { parseEnv } = await import("@starter/shared");
-  const env = parseEnv();
+  const { AUTH_SECRET } = parseEnv();
 
-  const adminSessionToken = await getSignedCookie(c, env.AUTH_SECRET, "better-auth.admin_session");
+  const adminSessionToken = await getSignedCookie(c, AUTH_SECRET, "better-auth.admin_session");
 
   if (adminSessionToken) {
     // Restore the admin's session cookie
-    await setSessionTokenCookie(c, adminSessionToken, 7 * 24 * 60 * 60);
+    await setSessionTokenCookie(c, adminSessionToken, 7 * 24 * 60 * 60, AUTH_SECRET);
     // Clear the admin_session cookie
-    await setSignedCookie(c, "better-auth.admin_session", "", env.AUTH_SECRET, {
+    await setSignedCookie(c, "better-auth.admin_session", "", AUTH_SECRET, {
       path: "/",
       httpOnly: true,
       sameSite: "Lax",
@@ -335,7 +355,7 @@ export async function exitImpersonationHandler(c: Context) {
 
     if (adminSession && adminSession.expiresAt > new Date()) {
       const maxAge = Math.floor((adminSession.expiresAt.getTime() - Date.now()) / 1000);
-      await setSessionTokenCookie(c, adminSession.token, maxAge);
+      await setSessionTokenCookie(c, adminSession.token, maxAge, AUTH_SECRET);
     } else {
       // No valid admin session found — clear the cookie
       setCookie(c, SESSION_COOKIE_NAME, "", {

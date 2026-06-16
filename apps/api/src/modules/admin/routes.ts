@@ -38,7 +38,7 @@ import {
  * Checks user.role === 'admin' — this is the DB-level platform role, not the
  * org-scoped role that requireRole() checks.
  */
-function adminMiddleware(): MiddlewareHandler {
+export function adminMiddleware(): MiddlewareHandler {
   return async (c, next) => {
     const user = c.get("user");
     if (!user || user.role !== "admin") {

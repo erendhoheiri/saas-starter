@@ -385,6 +385,34 @@ describe("POST /api/admin/users/:userId/suspend + unsuspend", () => {
   );
 
   it(
+    "admin cannot suspend themselves — 400",
+    async () => {
+      const { withTestDb } = await import("@starter/db/test-helpers");
+      await withTestDb(async (testDb) => {
+        const { schema } = await import("@starter/db");
+        const { eq } = await import("drizzle-orm");
+        // biome-ignore lint/suspicious/noExplicitAny: test helper
+        const db = testDb as any;
+        const app = await buildTestApp();
+        const adminEmail = `admin-self-suspend-${Date.now()}@example.com`;
+        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+
+        const adminRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, adminEmail));
+        const adminId = adminRows[0]?.id;
+        expect(adminId).toBeDefined();
+
+        const res = await app.request(`/api/admin/users/${adminId}/suspend`, {
+          method: "POST",
+          headers: { Cookie: adminCookie },
+        });
+
+        expect(res.status).toBe(400);
+      });
+    },
+    30_000,
+  );
+
+  it(
     "admin can unsuspend a user — clears bannedAt",
     async () => {
       const { withTestDb } = await import("@starter/db/test-helpers");
@@ -460,6 +488,103 @@ describe("POST /api/admin/users/:userId/impersonate", () => {
         const body = await res.json() as { userId: string; impersonatedBy: string };
         expect(body.userId).toBe(targetId);
         expect(typeof body.impersonatedBy).toBe("string");
+      });
+    },
+    30_000,
+  );
+
+  it(
+    "admin cannot impersonate themselves — 400",
+    async () => {
+      const { withTestDb } = await import("@starter/db/test-helpers");
+      await withTestDb(async (testDb) => {
+        const { schema } = await import("@starter/db");
+        const { eq } = await import("drizzle-orm");
+        // biome-ignore lint/suspicious/noExplicitAny: test helper
+        const db = testDb as any;
+        const app = await buildTestApp();
+        const adminEmail = `admin-self-imp-${Date.now()}@example.com`;
+        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+
+        const adminRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, adminEmail));
+        const adminId = adminRows[0]?.id;
+        expect(adminId).toBeDefined();
+
+        const res = await app.request(`/api/admin/users/${adminId}/impersonate`, {
+          method: "POST",
+          headers: { Cookie: adminCookie },
+        });
+
+        expect(res.status).toBe(400);
+      });
+    },
+    30_000,
+  );
+
+  it(
+    "admin cannot impersonate another admin — 400",
+    async () => {
+      const { withTestDb } = await import("@starter/db/test-helpers");
+      await withTestDb(async (testDb) => {
+        const { schema } = await import("@starter/db");
+        const { eq } = await import("drizzle-orm");
+        // biome-ignore lint/suspicious/noExplicitAny: test helper
+        const db = testDb as any;
+        const app = await buildTestApp();
+        const adminEmail = `admin-imp-admin-${Date.now()}@example.com`;
+        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+
+        // Create a second admin
+        const secondAdminEmail = `admin2-imp-admin-${Date.now()}@example.com`;
+        await signUpAdmin(app, testDb, secondAdminEmail, "Password1!");
+        const secondAdminRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, secondAdminEmail));
+        const secondAdminId = secondAdminRows[0]?.id;
+        expect(secondAdminId).toBeDefined();
+
+        const res = await app.request(`/api/admin/users/${secondAdminId}/impersonate`, {
+          method: "POST",
+          headers: { Cookie: adminCookie },
+        });
+
+        expect(res.status).toBe(400);
+      });
+    },
+    30_000,
+  );
+
+  it(
+    "admin cannot impersonate a suspended user — 400",
+    async () => {
+      const { withTestDb } = await import("@starter/db/test-helpers");
+      await withTestDb(async (testDb) => {
+        const { schema } = await import("@starter/db");
+        const { eq } = await import("drizzle-orm");
+        // biome-ignore lint/suspicious/noExplicitAny: test helper
+        const db = testDb as any;
+        const app = await buildTestApp();
+        const adminEmail = `admin-imp-suspended-${Date.now()}@example.com`;
+        const adminCookie = await signUpAdmin(app, testDb, adminEmail, "Password1!");
+
+        const targetEmail = `target-suspended-${Date.now()}@example.com`;
+        await signUp(app, targetEmail, "Password1!");
+        const targetRows = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, targetEmail));
+        const targetId = targetRows[0]?.id;
+        expect(targetId).toBeDefined();
+
+        // Suspend target first
+        const suspendRes = await app.request(`/api/admin/users/${targetId}/suspend`, {
+          method: "POST",
+          headers: { Cookie: adminCookie },
+        });
+        expect(suspendRes.status).toBe(200);
+
+        // Now try to impersonate the suspended user
+        const res = await app.request(`/api/admin/users/${targetId}/impersonate`, {
+          method: "POST",
+          headers: { Cookie: adminCookie },
+        });
+
+        expect(res.status).toBe(400);
       });
     },
     30_000,
