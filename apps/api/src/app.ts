@@ -74,7 +74,9 @@ app.all("/api/auth/*", async (c) => {
       );
       _router = organizationsRouter;
     }
-    return _router.fetch(c.req.raw, c.env);
+    const url = new URL(c.req.raw.url);
+    url.pathname = c.req.path;
+    return _router.fetch(new Request(url.toString(), c.req.raw), c.env);
   });
   app.route("/api/organizations", orgsProxy);
 }
@@ -89,7 +91,9 @@ app.all("/api/auth/*", async (c) => {
       const { accountRouter } = await import("./modules/account/routes");
       _router = accountRouter;
     }
-    return _router.fetch(c.req.raw, c.env);
+    const url = new URL(c.req.raw.url);
+    url.pathname = c.req.path;
+    return _router.fetch(new Request(url.toString(), c.req.raw), c.env);
   });
   app.route("/api/account", accountProxy);
 }
@@ -104,7 +108,9 @@ app.all("/api/auth/*", async (c) => {
       const { adminRouter } = await import("./modules/admin/routes");
       _router = adminRouter;
     }
-    return _router.fetch(c.req.raw, c.env);
+    const url = new URL(c.req.raw.url);
+    url.pathname = c.req.path;
+    return _router.fetch(new Request(url.toString(), c.req.raw), c.env);
   });
   app.route("/api/admin", adminProxy);
 }
