@@ -54,7 +54,9 @@ export async function updateMeHandler(c: Context) {
   const { db, schema } = await import("@starter/db");
   const { eq } = await import("drizzle-orm");
 
-  const updates: Record<string, unknown> = { updatedAt: new Date() };
+  const updates: { name?: string; image?: string | null; updatedAt: Date } = {
+    updatedAt: new Date(),
+  };
   if (body.name !== undefined) updates.name = body.name;
   if (body.image !== undefined) updates.image = body.image;
 
@@ -119,11 +121,9 @@ export async function deleteAccountHandler(c: Context) {
   const user = c.get("user");
   const { db, schema } = await import("@starter/db");
   const { eq, and, ne } = await import("drizzle-orm");
-  const { createJobQueue } = await import("../../lib/jobs");
+  const { jobQueue } = await import("../../lib/jobs");
 
-  const jobs = createJobQueue();
-
-  // Fetch all memberships for this user
+  // Collect membership info outside the transaction (read-only pre-flight)
   const memberships = await db
     .select({
       id: schema.member.id,
@@ -133,83 +133,94 @@ export async function deleteAccountHandler(c: Context) {
     .from(schema.member)
     .where(eq(schema.member.userId, user.id));
 
-  for (const membership of memberships) {
-    const orgId = membership.organizationId;
+  // Collect org-level decisions outside the transaction so we can schedule
+  // jobs only after a successful commit.
+  const orgsToSoftDelete: string[] = [];
 
-    if (membership.role !== "owner") {
-      // Not an owner — membership row will be removed by cascade when user is
-      // deleted. No special action needed for the org.
-      continue;
+  await db.transaction(async (tx) => {
+    for (const membership of memberships) {
+      const orgId = membership.organizationId;
+
+      if (membership.role !== "owner") {
+        // Not an owner — membership row will be removed by cascade when user is
+        // deleted. No special action needed for the org.
+        continue;
+      }
+
+      // User is owner of this org. Check if there are other owners.
+      const otherOwners = await tx
+        .select({ id: schema.member.id, userId: schema.member.userId })
+        .from(schema.member)
+        .where(
+          and(
+            eq(schema.member.organizationId, orgId),
+            eq(schema.member.role, "owner"),
+            ne(schema.member.userId, user.id),
+          ),
+        );
+
+      if (otherOwners.length > 0) {
+        // Another owner exists — nothing special needed for this org.
+        continue;
+      }
+
+      // Sole owner. Check for other members.
+      const otherMembers = await tx
+        .select({
+          id: schema.member.id,
+          userId: schema.member.userId,
+          role: schema.member.role,
+        })
+        .from(schema.member)
+        .where(
+          and(
+            eq(schema.member.organizationId, orgId),
+            ne(schema.member.userId, user.id),
+          ),
+        )
+        .orderBy(schema.member.createdAt);
+
+      if (otherMembers.length === 0) {
+        // No other members → soft-delete org (hard-delete job scheduled post-commit)
+        await tx
+          .update(schema.organization)
+          .set({ deletedAt: new Date() })
+          .where(eq(schema.organization.id, orgId));
+
+        orgsToSoftDelete.push(orgId);
+      } else {
+        // Has other members → promote next eligible member to owner
+        // Priority: admin > member (take first by createdAt within each tier)
+        const nextOwner =
+          otherMembers.find((m) => m.role === "admin") ??
+          otherMembers.find((m) => m.role === "member") ??
+          otherMembers[0]!;
+
+        await tx
+          .update(schema.member)
+          .set({ role: "owner" })
+          .where(eq(schema.member.id, nextOwner.id));
+
+        // The user's own member row will be deleted by cascade when the user
+        // record is deleted below.
+      }
     }
 
-    // User is owner of this org. Check if there are other owners.
-    const otherOwners = await db
-      .select({ id: schema.member.id, userId: schema.member.userId })
-      .from(schema.member)
-      .where(
-        and(
-          eq(schema.member.organizationId, orgId),
-          eq(schema.member.role, "owner"),
-          ne(schema.member.userId, user.id),
-        ),
-      );
+    // Delete user record — DB cascades handle:
+    //   session (onDelete: cascade)
+    //   account (onDelete: cascade)
+    //   member  (onDelete: cascade)
+    await tx.delete(schema.user).where(eq(schema.user.id, user.id));
+  });
 
-    if (otherOwners.length > 0) {
-      // Another owner exists — nothing special needed for this org.
-      continue;
-    }
-
-    // Sole owner. Check for other members.
-    const otherMembers = await db
-      .select({
-        id: schema.member.id,
-        userId: schema.member.userId,
-        role: schema.member.role,
-      })
-      .from(schema.member)
-      .where(
-        and(
-          eq(schema.member.organizationId, orgId),
-          ne(schema.member.userId, user.id),
-        ),
-      )
-      .orderBy(schema.member.createdAt);
-
-    if (otherMembers.length === 0) {
-      // No other members → soft-delete org + schedule hard-delete
-      await db
-        .update(schema.organization)
-        .set({ deletedAt: new Date() })
-        .where(eq(schema.organization.id, orgId));
-
-      jobs.schedule(
-        "org.hardDelete",
-        { orgId },
-        30 * 24 * 60 * 60 * 1000, // 30 days
-      );
-    } else {
-      // Has other members → promote next eligible member to owner
-      // Priority: admin > member (take first by createdAt within each tier)
-      const nextOwner =
-        otherMembers.find((m) => m.role === "admin") ??
-        otherMembers.find((m) => m.role === "member") ??
-        otherMembers[0]!;
-
-      await db
-        .update(schema.member)
-        .set({ role: "owner" })
-        .where(eq(schema.member.id, nextOwner.id));
-
-      // The user's own member row will be deleted by cascade when the user
-      // record is deleted below.
-    }
+  // Schedule hard-delete jobs only after the transaction committed successfully
+  for (const orgId of orgsToSoftDelete) {
+    jobQueue.schedule(
+      "org.hardDelete",
+      { orgId },
+      30 * 24 * 60 * 60 * 1000, // 30 days
+    );
   }
-
-  // Delete user record — DB cascades handle:
-  //   session (onDelete: cascade)
-  //   account (onDelete: cascade)
-  //   member  (onDelete: cascade)
-  await db.delete(schema.user).where(eq(schema.user.id, user.id));
 
   return c.json({ success: true });
 }
@@ -224,7 +235,7 @@ export async function deleteOrgHandler(c: Context) {
 
   const { db, schema } = await import("@starter/db");
   const { eq, and } = await import("drizzle-orm");
-  const { createJobQueue } = await import("../../lib/jobs");
+  const { jobQueue } = await import("../../lib/jobs");
 
   // Verify the user is a member of this org and check their role
   const memberRows = await db
@@ -276,8 +287,7 @@ export async function deleteOrgHandler(c: Context) {
     .where(eq(schema.organization.id, orgId));
 
   // Schedule hard-delete job
-  const jobs = createJobQueue();
-  jobs.schedule(
+  jobQueue.schedule(
     "org.hardDelete",
     { orgId },
     30 * 24 * 60 * 60 * 1000, // 30 days

@@ -119,7 +119,16 @@ export async function collectOrgData(
   const { eq } = await import("drizzle-orm");
 
   const orgRows = await db
-    .select()
+    .select({
+      id: schema.organization.id,
+      name: schema.organization.name,
+      slug: schema.organization.slug,
+      logo: schema.organization.logo,
+      metadata: schema.organization.metadata,
+      deletedAt: schema.organization.deletedAt,
+      createdAt: schema.organization.createdAt,
+      updatedAt: schema.organization.updatedAt,
+    })
     .from(schema.organization)
     .where(eq(schema.organization.id, orgId))
     .limit(1);
