@@ -21,6 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@starter/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -62,7 +66,6 @@ function SettingsPage() {
   const user = (session as any)?.user;
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"profile" | "account">("profile");
 
   // ---- Profile query ----
   const { data: profile } = useQuery({
@@ -168,124 +171,113 @@ function SettingsPage() {
     <div className="p-8 max-w-2xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Settings</h1>
 
-      {/* Tab nav */}
-      <div className="flex gap-4 border-b pb-2">
-        <button
-          type="button"
-          className={`text-sm font-medium pb-2 ${activeTab === "profile" ? "border-b-2 border-primary" : "text-muted-foreground"}`}
-          onClick={() => setActiveTab("profile")}
-        >
-          Profile
-        </button>
-        <button
-          type="button"
-          className={`text-sm font-medium pb-2 ${activeTab === "account" ? "border-b-2 border-primary" : "text-muted-foreground"}`}
-          onClick={() => setActiveTab("account")}
-        >
-          Account
-        </button>
-      </div>
+      <Tabs defaultValue="profile">
+        <TabsList className="mb-6">
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="account">Account</TabsTrigger>
+        </TabsList>
 
-      {/* Profile tab */}
-      {activeTab === "profile" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Update your name and avatar.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4 text-sm text-muted-foreground">
-              Email:{" "}
-              <span className="text-foreground">
-                {profile?.email ?? user?.email}
-              </span>
-            </div>
-            <form
-              onSubmit={handleSubmit(onProfileSubmit)}
-              className="space-y-4"
-            >
-              <div>
-                <label
-                  htmlFor="profile-name"
-                  className="text-sm font-medium block mb-1"
-                >
-                  Name
-                </label>
-                <Input
-                  id="profile-name"
-                  {...register("name")}
-                  placeholder="Your name"
-                />
-                {errors.name && (
-                  <p className="text-destructive text-sm mt-1">
-                    {errors.name.message}
-                  </p>
-                )}
-              </div>
-              {errors.root && (
-                <p className="text-destructive text-sm">
-                  {errors.root.message}
-                </p>
-              )}
-              {updateProfileMutation.isSuccess && (
-                <p className="text-green-600 text-sm">Profile updated.</p>
-              )}
-              <Button
-                type="submit"
-                variant="outline"
-                disabled={isSubmitting || updateProfileMutation.isPending}
-              >
-                {updateProfileMutation.isPending ? "Saving..." : "Save changes"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Account tab */}
-      {activeTab === "account" && (
-        <div className="space-y-4">
+        <TabsContent value="profile">
           <Card>
             <CardHeader>
-              <CardTitle>Export data</CardTitle>
-              <CardDescription>
-                Download a JSON bundle of your account data.
-              </CardDescription>
+              <CardTitle>Profile</CardTitle>
+              <CardDescription>Update your name and avatar.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button
-                variant="outline"
-                onClick={() => exportMutation.mutate()}
-                disabled={exportMutation.isPending}
+              <div className="mb-4 text-sm text-muted-foreground">
+                Email:{" "}
+                <span className="text-foreground">
+                  {profile?.email ?? user?.email}
+                </span>
+              </div>
+              <form
+                onSubmit={handleSubmit(onProfileSubmit)}
+                className="space-y-4"
               >
-                {exportMutation.isPending ? "Exporting..." : "Export my data"}
-              </Button>
-              {exportMutation.isError && (
-                <p className="text-destructive text-sm mt-2">
-                  Export failed. Please try again.
-                </p>
-              )}
+                <div>
+                  <label
+                    htmlFor="profile-name"
+                    className="text-sm font-medium block mb-1"
+                  >
+                    Name
+                  </label>
+                  <Input
+                    id="profile-name"
+                    {...register("name")}
+                    placeholder="Your name"
+                  />
+                  {errors.name && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
+                {errors.root && (
+                  <p className="text-destructive text-sm">
+                    {errors.root.message}
+                  </p>
+                )}
+                {updateProfileMutation.isSuccess && (
+                  <p className="text-green-600 text-sm">Profile updated.</p>
+                )}
+                <Button
+                  type="submit"
+                  variant="outline"
+                  disabled={isSubmitting || updateProfileMutation.isPending}
+                >
+                  {updateProfileMutation.isPending
+                    ? "Saving..."
+                    : "Save changes"}
+                </Button>
+              </form>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger zone</CardTitle>
-              <CardDescription>
-                Permanently delete your account. This cannot be undone.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                variant="outline"
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                Delete account
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        <TabsContent value="account">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Export data</CardTitle>
+                <CardDescription>
+                  Download a JSON bundle of your account data.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="outline"
+                  onClick={() => exportMutation.mutate()}
+                  disabled={exportMutation.isPending}
+                >
+                  {exportMutation.isPending ? "Exporting..." : "Export my data"}
+                </Button>
+                {exportMutation.isError && (
+                  <p className="text-destructive text-sm mt-2">
+                    Export failed. Please try again.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-destructive">
+              <CardHeader>
+                <CardTitle className="text-destructive">Danger zone</CardTitle>
+                <CardDescription>
+                  Permanently delete your account. This cannot be undone.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  Delete account
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Delete confirmation dialog */}
       <Dialog
