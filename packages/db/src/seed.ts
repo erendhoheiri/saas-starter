@@ -1,5 +1,4 @@
 import { randomBytes, scrypt } from "node:crypto";
-import { promisify } from "node:util";
 import { createId } from "@paralleldrive/cuid2";
 import { parseEnv } from "@starter/shared";
 import { and, eq } from "drizzle-orm";
@@ -7,16 +6,25 @@ import { createDb } from "./client";
 import { loadEnv } from "./load-env";
 import { account, member, organization, user } from "./schema";
 
-const scryptAsync = promisify(scrypt);
-
 /**
- * Hash a password using the same scrypt scheme Better Auth uses internally:
- * `${salt}:${derivedKey}` where both are hex strings.
+ * Hash a password using Better Auth's exact scrypt scheme (from
+ * @better-auth/utils/password): N=16384, r=16, p=1, dkLen=64, NFKC-normalized.
+ * Produces `${salt}:${derivedKeyHex}`.
  */
-async function hashPassword(password: string): Promise<string> {
+function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString("hex");
-  const key = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${salt}:${key.toString("hex")}`;
+  return new Promise((resolve, reject) => {
+    scrypt(
+      password.normalize("NFKC"),
+      salt,
+      64,
+      { N: 16384, r: 16, p: 1, maxmem: 128 * 16384 * 16 * 2 },
+      (err, key) => {
+        if (err) reject(err);
+        else resolve(`${salt}:${key.toString("hex")}`);
+      },
+    );
+  });
 }
 
 /**
