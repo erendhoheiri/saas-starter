@@ -1,6 +1,7 @@
 import { createRoute, Outlet, redirect } from "@tanstack/react-router"
 import { rootRoute } from "@/router"
 import { authClient } from "@/lib/auth"
+import { ImpersonationBanner } from "@/components/impersonation-banner"
 
 export const adminLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -22,6 +23,7 @@ export const adminLayoutRoute = createRoute({
 function AdminLayout() {
   return (
     <div className="min-h-screen">
+      <ImpersonationBanner />
       <Outlet />
     </div>
   )
