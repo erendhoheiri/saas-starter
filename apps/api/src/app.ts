@@ -41,6 +41,28 @@ app.all("/api/auth/*", async (c) => {
   return handler(c.req.raw);
 });
 
+// --- Organization routes ---
+// Lazy import mirrors the pattern used for auth routes above: avoids pulling
+// in @starter/auth / @starter/db at module-load time so unit tests that mock
+// those modules (e.g. healthReady.test.ts) can still import app.ts safely.
+//
+// We strip the /api/organizations prefix manually so the sub-router sees the
+// correct path (e.g. POST /invite, GET /, etc.).
+app.all("/api/organizations/*", async (c) => {
+  const { organizationsRouter } = await import("./modules/organizations/routes");
+  const url = new URL(c.req.url);
+  url.pathname = url.pathname.replace(/^\/api\/organizations/, "") || "/";
+  const req = new Request(url.toString(), c.req.raw);
+  return organizationsRouter.fetch(req, c.env);
+});
+app.on(["GET", "POST"], "/api/organizations", async (c) => {
+  const { organizationsRouter } = await import("./modules/organizations/routes");
+  const url = new URL(c.req.url);
+  url.pathname = "/";
+  const req = new Request(url.toString(), c.req.raw);
+  return organizationsRouter.fetch(req, c.env);
+});
+
 // --- Routes ---
 app.get("/health", (c) => {
   return c.json({ status: "ok" });
