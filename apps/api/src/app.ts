@@ -77,6 +77,21 @@ app.all("/api/auth/*", async (c) => {
   app.route("/api/account", accountProxy);
 }
 
+// --- Admin routes ---
+// Lazy-proxy sub-app identical to the organizations / account pattern.
+{
+  const adminProxy = new Hono();
+  let _router: Hono | null = null;
+  adminProxy.all("/*", async (c) => {
+    if (!_router) {
+      const { adminRouter } = await import("./modules/admin/routes");
+      _router = adminRouter;
+    }
+    return _router.fetch(c.req.raw, c.env);
+  });
+  app.route("/api/admin", adminProxy);
+}
+
 // --- Routes ---
 app.get("/health", (c) => {
   return c.json({ status: "ok" });

@@ -41,6 +41,12 @@ export const session = pgTable("session", {
   userAgent: text("user_agent"),
   // Added by the organization plugin: the org the session is acting within.
   activeOrganizationId: text("active_organization_id"),
+  /**
+   * Set when this session was created via admin impersonation.
+   * Contains the platform admin's user id who initiated the impersonation.
+   * Null for normal sessions.
+   */
+  impersonatedBy: text("impersonated_by"),
   ...timestamps(),
 });
 
