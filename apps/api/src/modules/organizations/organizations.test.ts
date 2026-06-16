@@ -264,8 +264,8 @@ describe("POST /api/organizations/invite — invite a member", () => {
 
       // Create owner and org
       const ownerEmail = `owner-no-inv-${Date.now()}@example.com`;
-      let ownerCookie = await signUp(app, ownerEmail, "Password1!");
-      ownerCookie = await signIn(app, ownerEmail, "Password1!");
+      let _ownerCookie = await signUp(app, ownerEmail, "Password1!");
+      _ownerCookie = await signIn(app, ownerEmail, "Password1!");
 
       const { db: testDb } = createDb(process.env.TEST_DATABASE_URL as string);
       const ownerId = await getUserId(testDb, ownerEmail);
@@ -394,8 +394,8 @@ describe("POST /api/organizations/members/role — update member role", () => {
       const app = await buildTestApp();
 
       const ownerEmail = `owner-role2-${Date.now()}@example.com`;
-      let ownerCookie = await signUp(app, ownerEmail, "Password1!");
-      ownerCookie = await signIn(app, ownerEmail, "Password1!");
+      let _ownerCookie = await signUp(app, ownerEmail, "Password1!");
+      _ownerCookie = await signIn(app, ownerEmail, "Password1!");
 
       const { db: testDb } = createDb(process.env.TEST_DATABASE_URL as string);
       const ownerId = await getUserId(testDb, ownerEmail);
@@ -517,8 +517,8 @@ describe("POST /api/organizations/members/remove — remove member", () => {
       const app = await buildTestApp();
 
       const ownerEmail = `owner-rm-403-${Date.now()}@example.com`;
-      let ownerCookie = await signUp(app, ownerEmail, "Password1!");
-      ownerCookie = await signIn(app, ownerEmail, "Password1!");
+      let _ownerCookie = await signUp(app, ownerEmail, "Password1!");
+      _ownerCookie = await signIn(app, ownerEmail, "Password1!");
 
       const { db: testDb } = createDb(process.env.TEST_DATABASE_URL as string);
       const ownerId = await getUserId(testDb, ownerEmail);

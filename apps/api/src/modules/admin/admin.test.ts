@@ -96,7 +96,7 @@ async function signUpAdmin(
   email: string,
   password: string,
 ): Promise<string> {
-  const cookie = await signUp(app, email, password, "Admin User");
+  const _cookie = await signUp(app, email, password, "Admin User");
   const { schema } = await import("@starter/db");
   const { eq } = await import("drizzle-orm");
   // biome-ignore lint/suspicious/noExplicitAny: test helper

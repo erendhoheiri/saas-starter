@@ -10,7 +10,7 @@ export interface LogPayload {
 }
 
 function writeJson(payload: LogPayload): void {
-  process.stdout.write(JSON.stringify(payload) + "\n");
+  process.stdout.write(`${JSON.stringify(payload)}\n`);
 }
 
 export const logger = {

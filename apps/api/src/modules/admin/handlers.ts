@@ -332,7 +332,7 @@ export async function exitImpersonationHandler(c: Context) {
 
   const sessionRow = sessionRows[0];
 
-  if (!sessionRow || !sessionRow.impersonatedBy) {
+  if (!sessionRow?.impersonatedBy) {
     throw new HTTPException(400, {
       message: "Not in an impersonation session",
     });

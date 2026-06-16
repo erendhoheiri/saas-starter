@@ -1,5 +1,4 @@
 import { describe, expect, it } from "bun:test";
-import { z } from "zod";
 import { forgotPasswordSchema } from "@/routes/forgot-password";
 import { loginSchema } from "@/routes/login";
 import { resetPasswordSchema } from "@/routes/reset-password";

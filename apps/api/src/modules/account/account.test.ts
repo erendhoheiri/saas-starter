@@ -217,9 +217,9 @@ describe("GET /api/account/export — data export", () => {
       };
       const firstOrg = body.orgs[0];
       expect(firstOrg).toBeDefined();
-      expect(typeof firstOrg!.org.id).toBe("string");
-      expect(typeof firstOrg!.role).toBe("string");
-      expect(Array.isArray(firstOrg!.members)).toBe(true);
+      expect(typeof firstOrg?.org.id).toBe("string");
+      expect(typeof firstOrg?.role).toBe("string");
+      expect(Array.isArray(firstOrg?.members)).toBe(true);
     });
   }, 30_000);
 

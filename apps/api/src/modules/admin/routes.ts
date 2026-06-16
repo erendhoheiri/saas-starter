@@ -42,7 +42,7 @@ import {
 export function adminMiddleware(): MiddlewareHandler {
   return async (c, next) => {
     const user = c.get("user");
-    if (!user || user.role !== "admin") {
+    if (user?.role !== "admin") {
       throw new HTTPException(403, {
         message: "Forbidden: platform admin required",
       });

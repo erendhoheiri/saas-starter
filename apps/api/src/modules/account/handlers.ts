@@ -15,7 +15,7 @@
 import type { UpdateProfileInput } from "@starter/shared";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { collectOrgData, collectUserData } from "./collect";
+import { collectUserData } from "./collect";
 
 // ---------------------------------------------------------------------------
 // Typed accessor for validated JSON body
