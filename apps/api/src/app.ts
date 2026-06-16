@@ -57,62 +57,49 @@ app.all("/api/auth/*", async (c) => {
 });
 
 // --- Organization routes ---
-// We use a lazy-proxy sub-app so that `@starter/auth` and `@starter/db` are
-// not imported at module-load time. This keeps unit tests that mock those
-// modules (e.g. healthReady.test.ts) safe: they can import app.ts without
-// triggering a real DB/auth connection.
-//
-// The proxy caches the real router after the first request so subsequent
-// requests pay no dynamic-import overhead.
+// app.mount() strips the path prefix before forwarding so the sub-router sees
+// /list instead of /api/organizations/list. The lazy import is cached after
+// the first request — subsequent calls pay no dynamic-import overhead.
+// app.route() was intentionally NOT used here: route() copies routes at mount
+// time and does not strip the prefix at request time, so the sub-router would
+// receive the full /api/organizations/... path and return 404.
 {
-  const orgsProxy = new Hono();
-  let _router: Hono | null = null;
-  orgsProxy.all("/*", async (c) => {
-    if (!_router) {
+  let _orgsRouter: Hono | null = null;
+  app.mount("/api/organizations", async (req, env) => {
+    if (!_orgsRouter) {
       const { organizationsRouter } = await import(
         "./modules/organizations/routes"
       );
-      _router = organizationsRouter;
+      _orgsRouter = organizationsRouter;
     }
-    const url = new URL(c.req.raw.url);
-    url.pathname = c.req.path;
-    return _router.fetch(new Request(url.toString(), c.req.raw), c.env);
+    return _orgsRouter.fetch(req, env);
   });
-  app.route("/api/organizations", orgsProxy);
 }
 
 // --- Account routes ---
-// Lazy-proxy sub-app identical to the organizations pattern.
+// Same lazy-mount pattern as organizations.
 {
-  const accountProxy = new Hono();
-  let _router: Hono | null = null;
-  accountProxy.all("/*", async (c) => {
-    if (!_router) {
+  let _accountRouter: Hono | null = null;
+  app.mount("/api/account", async (req, env) => {
+    if (!_accountRouter) {
       const { accountRouter } = await import("./modules/account/routes");
-      _router = accountRouter;
+      _accountRouter = accountRouter;
     }
-    const url = new URL(c.req.raw.url);
-    url.pathname = c.req.path;
-    return _router.fetch(new Request(url.toString(), c.req.raw), c.env);
+    return _accountRouter.fetch(req, env);
   });
-  app.route("/api/account", accountProxy);
 }
 
 // --- Admin routes ---
-// Lazy-proxy sub-app identical to the organizations / account pattern.
+// Same lazy-mount pattern as organizations.
 {
-  const adminProxy = new Hono();
-  let _router: Hono | null = null;
-  adminProxy.all("/*", async (c) => {
-    if (!_router) {
+  let _adminRouter: Hono | null = null;
+  app.mount("/api/admin", async (req, env) => {
+    if (!_adminRouter) {
       const { adminRouter } = await import("./modules/admin/routes");
-      _router = adminRouter;
+      _adminRouter = adminRouter;
     }
-    const url = new URL(c.req.raw.url);
-    url.pathname = c.req.path;
-    return _router.fetch(new Request(url.toString(), c.req.raw), c.env);
+    return _adminRouter.fetch(req, env);
   });
-  app.route("/api/admin", adminProxy);
 }
 
 // --- Routes ---
