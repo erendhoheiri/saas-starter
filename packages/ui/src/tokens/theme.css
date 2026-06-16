@@ -1,5 +1,3 @@
-@import "tailwindcss";
-
 @theme {
   /* Primitives — raw scales, never used directly in components */
   --color-slate-50: oklch(0.984 0.003 247.858);
