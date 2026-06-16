@@ -1,9 +1,23 @@
+import { randomBytes, scrypt } from "node:crypto";
+import { promisify } from "node:util";
 import { createId } from "@paralleldrive/cuid2";
 import { parseEnv } from "@starter/shared";
 import { and, eq } from "drizzle-orm";
 import { createDb } from "./client";
 import { loadEnv } from "./load-env";
 import { account, member, organization, user } from "./schema";
+
+const scryptAsync = promisify(scrypt);
+
+/**
+ * Hash a password using the same scrypt scheme Better Auth uses internally:
+ * `${salt}:${derivedKey}` where both are hex strings.
+ */
+async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const key = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${salt}:${key.toString("hex")}`;
+}
 
 /**
  * Seed users. Passwords are hashed at runtime — change these before seeding a
@@ -57,7 +71,7 @@ export async function seed(databaseUrl: string): Promise<void> {
     const seededUsers: { id: string; email: string; role: string }[] = [];
 
     for (const u of SEED_USERS) {
-      const hashedPassword = await Bun.password.hash(u.password, "argon2id");
+      const hashedPassword = await hashPassword(u.password);
 
       // Upsert user (conflict on unique email).
       const [seededUser] = await db
