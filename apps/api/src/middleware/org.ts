@@ -9,12 +9,14 @@ import type { schema } from "@starter/db";
 
 type OrgRecord = typeof schema.organization.$inferSelect;
 
-// Extend Hono's context variable map for org + role, keyed as optional because
-// not every request will have an active org context.
+// Extend Hono's context variable map for org + role as optional — not every
+// request will have an active org context (orgMiddleware skips resolution when
+// there is no activeOrganizationId), so c.get('org') may be undefined at
+// runtime and downstream handlers must null-check before trusting the value.
 declare module "hono" {
   interface ContextVariableMap {
-    org: OrgRecord;
-    role: string;
+    org: OrgRecord | undefined;
+    role: string | undefined;
   }
 }
 
@@ -53,7 +55,12 @@ export function orgMiddleware(): MiddlewareHandler {
     const { db, schema } = await import("@starter/db");
     const { and, eq } = await import("drizzle-orm");
 
-    // Look up the organization + membership in parallel.
+    // Look up the organization record and the user's membership in parallel to
+    // minimise latency. Both queries are intentional: the membership row alone
+    // would confirm access (FK guarantees the org exists), but we also need the
+    // full org record to set on the context via c.set('org', ...) for downstream
+    // handlers. If this becomes a performance concern, the two queries could be
+    // collapsed into a single membership JOIN that also selects org columns.
     const [orgs, memberships] = await Promise.all([
       db
         .select()
