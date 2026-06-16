@@ -32,13 +32,13 @@ describe("account deletion flow", () => {
     expect(schema.safeParse({ confirm: "delete my account" }).success).toBe(false)
   })
 
-  it("invite member schema validates email and role", () => {
-    const schema = z.object({
-      email: z.string().email(),
-      role: z.enum(["owner", "admin", "member"]),
-    })
-    expect(schema.safeParse({ email: "user@example.com", role: "member" }).success).toBe(true)
-    expect(schema.safeParse({ email: "not-an-email", role: "member" }).success).toBe(false)
-    expect(schema.safeParse({ email: "user@example.com", role: "superadmin" }).success).toBe(false)
+  it("invite member schema validates email and role", async () => {
+    const { inviteSchema } = await import("./_app.org")
+    expect(inviteSchema.safeParse({ email: "user@example.com", role: "member" }).success).toBe(true)
+    expect(inviteSchema.safeParse({ email: "user@example.com", role: "admin" }).success).toBe(true)
+    expect(inviteSchema.safeParse({ email: "not-an-email", role: "member" }).success).toBe(false)
+    expect(inviteSchema.safeParse({ email: "user@example.com", role: "superadmin" }).success).toBe(false)
+    // "owner" is not an invitable role
+    expect(inviteSchema.safeParse({ email: "user@example.com", role: "owner" }).success).toBe(false)
   })
 })

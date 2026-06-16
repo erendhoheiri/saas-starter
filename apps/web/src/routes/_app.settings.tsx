@@ -117,7 +117,9 @@ function SettingsPage() {
       const a = document.createElement("a")
       a.href = url
       a.download = "data-export.json"
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
     },
   })
@@ -145,7 +147,12 @@ function SettingsPage() {
   })
 
   const onDeleteSubmit = async () => {
-    await deleteAccountMutation.mutateAsync()
+    try {
+      await deleteAccountMutation.mutateAsync()
+    } catch {
+      // Error is already in deleteAccountMutation.error
+      return
+    }
     setDeleteDialogOpen(false)
     resetDelete()
   }

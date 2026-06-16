@@ -33,7 +33,7 @@ export const orgRoute = createRoute({
 // Schemas
 // ---------------------------------------------------------------------------
 
-const inviteSchema = z.object({
+export const inviteSchema = z.object({
   email: z.string().email("Valid email required"),
   role: z.enum(["admin", "member"]),
 })
@@ -66,7 +66,7 @@ function OrgPage() {
   const [deleteOrgOpen, setDeleteOrgOpen] = useState(false)
 
   // ---- Members query (via Better Auth client) ----
-  const { data: membersData, refetch: refetchMembers } = useQuery({
+  const { data: membersData } = useQuery({
     queryKey: ["org", "members", orgId],
     queryFn: async () => {
       // Better Auth organizationClient exposes getFullOrganization which
@@ -116,7 +116,6 @@ function OrgPage() {
     onSuccess: () => {
       resetInvite()
       queryClient.invalidateQueries({ queryKey: ["org", "members", orgId] })
-      refetchMembers()
     },
   })
 
@@ -139,7 +138,6 @@ function OrgPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["org", "members", orgId] })
-      refetchMembers()
     },
   })
 
@@ -154,7 +152,6 @@ function OrgPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["org", "members", orgId] })
-      refetchMembers()
     },
   })
 
@@ -224,7 +221,11 @@ function OrgPage() {
   })
 
   const onDeleteOrgSubmit = async () => {
-    await deleteOrgMutation.mutateAsync()
+    try {
+      await deleteOrgMutation.mutateAsync()
+    } catch {
+      // Error is already in deleteOrgMutation.error
+    }
   }
 
   if (!orgId) {
