@@ -42,26 +42,25 @@ app.all("/api/auth/*", async (c) => {
 });
 
 // --- Organization routes ---
-// Lazy import mirrors the pattern used for auth routes above: avoids pulling
-// in @starter/auth / @starter/db at module-load time so unit tests that mock
-// those modules (e.g. healthReady.test.ts) can still import app.ts safely.
+// We use a lazy-proxy sub-app so that `@starter/auth` and `@starter/db` are
+// not imported at module-load time. This keeps unit tests that mock those
+// modules (e.g. healthReady.test.ts) safe: they can import app.ts without
+// triggering a real DB/auth connection.
 //
-// We strip the /api/organizations prefix manually so the sub-router sees the
-// correct path (e.g. POST /invite, GET /, etc.).
-app.all("/api/organizations/*", async (c) => {
-  const { organizationsRouter } = await import("./modules/organizations/routes");
-  const url = new URL(c.req.url);
-  url.pathname = url.pathname.replace(/^\/api\/organizations/, "") || "/";
-  const req = new Request(url.toString(), c.req.raw);
-  return organizationsRouter.fetch(req, c.env);
-});
-app.on(["GET", "POST"], "/api/organizations", async (c) => {
-  const { organizationsRouter } = await import("./modules/organizations/routes");
-  const url = new URL(c.req.url);
-  url.pathname = "/";
-  const req = new Request(url.toString(), c.req.raw);
-  return organizationsRouter.fetch(req, c.env);
-});
+// The proxy caches the real router after the first request so subsequent
+// requests pay no dynamic-import overhead.
+{
+  const orgsProxy = new Hono();
+  let _router: Hono | null = null;
+  orgsProxy.all("/*", async (c) => {
+    if (!_router) {
+      const { organizationsRouter } = await import("./modules/organizations/routes");
+      _router = organizationsRouter;
+    }
+    return _router.fetch(c.req.raw, c.env);
+  });
+  app.route("/api/organizations", orgsProxy);
+}
 
 // --- Routes ---
 app.get("/health", (c) => {

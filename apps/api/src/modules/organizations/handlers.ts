@@ -12,6 +12,23 @@ import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 // ---------------------------------------------------------------------------
+// Typed accessor for validated JSON body
+// ---------------------------------------------------------------------------
+
+/**
+ * Typed wrapper around `c.req.valid("json")`.
+ *
+ * Hono's `valid()` overload requires a literal `ValidatedData` key that the
+ * TypeScript compiler knows about; "json" satisfies this at runtime but the
+ * generic overload isn't always inferred correctly in handler contexts.
+ * Casting to `never` silences the type error while preserving the runtime
+ * value. The generic `T` gives callers proper type-safety at the call-site.
+ */
+function validatedJson<T>(c: Context): T {
+  return c.req.valid("json" as never) as T;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -22,12 +39,16 @@ import { HTTPException } from "hono/http-exception";
  * error types.
  */
 function isBetterAuthApiError(err: unknown): err is { statusCode: number; body?: { message?: string; code?: string } } {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "statusCode" in err &&
-    typeof (err as Record<string, unknown>).statusCode === "number"
-  );
+  if (
+    typeof err !== "object" ||
+    err === null ||
+    !("statusCode" in err) ||
+    typeof (err as Record<string, unknown>).statusCode !== "number"
+  ) {
+    return false;
+  }
+  const code = (err as Record<string, unknown>).statusCode as number;
+  return code >= 400 && code < 600;
 }
 
 /**
@@ -62,7 +83,7 @@ async function relayAuthResponse(c: Context, apiCall: () => Promise<unknown>) {
 
 export async function createOrgHandler(c: Context) {
   const { auth } = await import("@starter/auth");
-  const body = c.req.valid("json" as never) as { name: string; slug: string };
+  const body = validatedJson<{ name: string; slug: string }>(c);
   return relayAuthResponse(c, () =>
     auth.api.createOrganization({
       body: { name: body.name, slug: body.slug },
@@ -82,11 +103,7 @@ export async function listOrgsHandler(c: Context) {
 
 export async function inviteMemberHandler(c: Context) {
   const { auth } = await import("@starter/auth");
-  const body = c.req.valid("json" as never) as {
-    email: string;
-    role: string;
-    organizationId?: string;
-  };
+  const body = validatedJson<{ email: string; role: string; organizationId?: string }>(c);
   return relayAuthResponse(c, () =>
     // biome-ignore lint/suspicious/noExplicitAny: Better Auth's role type is
     // narrowly inferred from plugin options; we cast to any here since the
@@ -104,7 +121,7 @@ export async function inviteMemberHandler(c: Context) {
 
 export async function acceptInvitationHandler(c: Context) {
   const { auth } = await import("@starter/auth");
-  const body = c.req.valid("json" as never) as { invitationId: string };
+  const body = validatedJson<{ invitationId: string }>(c);
   return relayAuthResponse(c, () =>
     auth.api.acceptInvitation({
       body: { invitationId: body.invitationId },
@@ -115,11 +132,7 @@ export async function acceptInvitationHandler(c: Context) {
 
 export async function updateMemberRoleHandler(c: Context) {
   const { auth } = await import("@starter/auth");
-  const body = c.req.valid("json" as never) as {
-    memberId: string;
-    role: string;
-    organizationId?: string;
-  };
+  const body = validatedJson<{ memberId: string; role: string; organizationId?: string }>(c);
   return relayAuthResponse(c, () =>
     auth.api.updateMemberRole({
       body: {
@@ -134,10 +147,7 @@ export async function updateMemberRoleHandler(c: Context) {
 
 export async function removeMemberHandler(c: Context) {
   const { auth } = await import("@starter/auth");
-  const body = c.req.valid("json" as never) as {
-    memberIdOrEmail: string;
-    organizationId?: string;
-  };
+  const body = validatedJson<{ memberIdOrEmail: string; organizationId?: string }>(c);
   return relayAuthResponse(c, () =>
     auth.api.removeMember({
       body: {
@@ -151,9 +161,7 @@ export async function removeMemberHandler(c: Context) {
 
 export async function setActiveOrgHandler(c: Context) {
   const { auth } = await import("@starter/auth");
-  const body = c.req.valid("json" as never) as {
-    organizationId?: string | null;
-  };
+  const body = validatedJson<{ organizationId?: string | null }>(c);
   return relayAuthResponse(c, () =>
     auth.api.setActiveOrganization({
       body: { organizationId: body.organizationId },
