@@ -175,7 +175,7 @@ async function setSessionTokenCookie(
   authSecret?: string,
 ) {
   const secret =
-    authSecret ?? (await import("@starter/shared").then(({ parseEnv }) => parseEnv().AUTH_SECRET));
+    authSecret ?? (await import("@starter/shared").then(({ parseEnv }) => parseEnv().AUTH_SECRET)) ?? "";
   await setSignedCookie(c, SESSION_COOKIE_NAME, token, secret, {
     path: "/",
     httpOnly: true,
