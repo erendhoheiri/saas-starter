@@ -16,8 +16,11 @@ export function AppSidebar() {
   const user = (session as any)?.user;
 
   const handleLogout = async () => {
-    await signOut();
-    navigate({ to: "/login" });
+    try {
+      await signOut();
+    } finally {
+      navigate({ to: "/login" });
+    }
   };
 
   return (
