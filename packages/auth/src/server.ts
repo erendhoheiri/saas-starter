@@ -34,6 +34,7 @@ function buildSocialProviders() {
 export const auth = betterAuth({
   baseURL: env.API_URL,
   secret: env.AUTH_SECRET,
+  trustedOrigins: [env.APP_URL],
 
   database: drizzleAdapter(db, {
     provider: "pg",
