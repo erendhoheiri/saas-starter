@@ -1,7 +1,19 @@
-import { Button, Input } from "@starter/ui";
+import {
+  Badge,
+  Button,
+  Input,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@starter/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Ban, ChevronLeft, ChevronRight, Eye, Search, ShieldCheck, ShieldX, UserCheck, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { adminLayoutRoute } from "@/routes/_admin";
 
@@ -97,17 +109,29 @@ function AdminUsersPage() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Users</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+          <Users className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Users</h1>
+          <p className="text-sm text-muted-foreground">Manage user accounts</p>
+        </div>
+      </div>
+
       <div className="mb-4 flex items-center gap-2">
-        <Input
-          placeholder="Search by email or name..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="max-w-sm"
-        />
+        <div className="relative max-w-sm w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search by email or name..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="pl-10"
+          />
+        </div>
         {total > 0 && (
           <span className="text-sm text-muted-foreground">
             {total} user{total !== 1 ? "s" : ""}
@@ -116,39 +140,78 @@ function AdminUsersPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Suspended</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       ) : users.length === 0 ? (
-        <div className="text-muted-foreground">No users found.</div>
+        <div className="rounded-lg border border-dashed border-border p-12 text-center">
+          <Users className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
+          <p className="text-sm text-muted-foreground">No users found.</p>
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-md border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium">Email</th>
-                <th className="text-left px-4 py-3 font-medium">Name</th>
-                <th className="text-left px-4 py-3 font-medium">Role</th>
-                <th className="text-left px-4 py-3 font-medium">Suspended</th>
-                <th className="text-left px-4 py-3 font-medium">Created</th>
-                <th className="text-left px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-lg border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Suspended</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {users.map((user) => (
-                <tr key={user.id} className="border-t hover:bg-muted/30">
-                  <td className="px-4 py-3">{user.email}</td>
-                  <td className="px-4 py-3">{user.name ?? "—"}</td>
-                  <td className="px-4 py-3">{user.role ?? "user"}</td>
-                  <td className="px-4 py-3">
-                    {user.bannedAt ? (
-                      <span className="text-destructive font-medium">Yes</span>
+                <TableRow key={user.id}>
+                  <TableCell className="text-foreground">{user.email}</TableCell>
+                  <TableCell className="text-foreground">{user.name ?? "—"}</TableCell>
+                  <TableCell>
+                    {user.role === "admin" ? (
+                      <Badge variant="default">admin</Badge>
+                    ) : user.role === "user" ? (
+                      <Badge variant="secondary">user</Badge>
                     ) : (
-                      <span className="text-muted-foreground">No</span>
+                      <Badge variant="outline">{user.role ?? "user"}</Badge>
                     )}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
+                    {user.bannedAt ? (
+                      <Badge variant="destructive">
+                        <Ban className="h-3 w-3 mr-1" />
+                        Suspended
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">Active</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
                     {new Date(user.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
                       {user.bannedAt ? (
                         <Button
@@ -156,7 +219,9 @@ function AdminUsersPage() {
                           size="sm"
                           onClick={() => unsuspendMutation.mutate(user.id)}
                           disabled={unsuspendMutation.isPending}
+                          className="gap-1.5"
                         >
+                          <UserCheck className="h-3.5 w-3.5" />
                           Unsuspend
                         </Button>
                       ) : (
@@ -165,7 +230,9 @@ function AdminUsersPage() {
                           size="sm"
                           onClick={() => suspendMutation.mutate(user.id)}
                           disabled={suspendMutation.isPending}
+                          className="gap-1.5"
                         >
+                          <Ban className="h-3.5 w-3.5" />
                           Suspend
                         </Button>
                       )}
@@ -175,30 +242,34 @@ function AdminUsersPage() {
                           size="sm"
                           onClick={() => impersonateMutation.mutate(user.id)}
                           disabled={impersonateMutation.isPending}
+                          className="gap-1.5"
                         >
+                          <Eye className="h-3.5 w-3.5" />
                           Impersonate
                         </Button>
                       )}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-6 flex items-center justify-center gap-2">
           <Button
             variant="outline"
             size="sm"
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
+            className="gap-1.5"
           >
+            <ChevronLeft className="h-3.5 w-3.5" />
             Previous
           </Button>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground px-2">
             Page {page} of {totalPages}
           </span>
           <Button
@@ -206,8 +277,10 @@ function AdminUsersPage() {
             size="sm"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
+            className="gap-1.5"
           >
             Next
+            <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       )}

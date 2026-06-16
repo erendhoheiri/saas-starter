@@ -1,9 +1,9 @@
+import { useMemo } from "react";
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { api as _api } from "@/lib/api";
 import { signOut, useSession } from "@/lib/auth";
 import { appLayoutRoute } from "@/routes/_app";
 
-// TODO: Hono RPC client types require `as any` due to composite build resolution
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const api = _api as any;
 
@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Label,
   Tabs,
   TabsContent,
   TabsList,
@@ -30,6 +31,14 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import {
+  Download,
+  Loader2,
+  Settings,
+  Shield,
+  Trash2,
+  User,
+} from "lucide-react";
 import { queryClient } from "@/lib/query";
 
 export const settingsRoute = createRoute({
@@ -37,6 +46,19 @@ export const settingsRoute = createRoute({
   path: "/settings",
   component: SettingsPage,
 });
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -64,6 +86,10 @@ function SettingsPage() {
   const navigate = useNavigate();
   const { data: session } = useSession();
   const user = (session as any)?.user;
+  const initials = useMemo(
+    () => (user?.name ? getInitials(user.name) : "U"),
+    [user?.name],
+  );
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -71,8 +97,6 @@ function SettingsPage() {
   const { data: profile } = useQuery({
     queryKey: ["account", "me"],
     queryFn: async () => {
-      // TODO: RPC types for account module may require `as any` since the router
-      // nested path typing can be tricky with Hono RPC.
       const res = await api.api.account.me.$get();
       return res.json() as Promise<{
         id: string;
@@ -160,7 +184,6 @@ function SettingsPage() {
     try {
       await deleteAccountMutation.mutateAsync();
     } catch {
-      // Error is already in deleteAccountMutation.error
       return;
     }
     setDeleteDialogOpen(false);
@@ -169,62 +192,85 @@ function SettingsPage() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      <h1 className="text-3xl font-bold text-foreground mb-6">Settings</h1>
 
       <Tabs defaultValue="profile">
-        <TabsList className="mb-6">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="account">Account</TabsTrigger>
+        <TabsList className="mb-8">
+          <TabsTrigger value="profile" className="gap-2">
+            <User className="h-4 w-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="account" className="gap-2">
+            <Settings className="h-4 w-4" />
+            Account
+          </TabsTrigger>
         </TabsList>
 
+        {/* ---- Profile Tab ---- */}
         <TabsContent value="profile">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-lg font-semibold text-accent-foreground">
+              {initials}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {user?.name ?? "User"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {profile?.email ?? user?.email ?? "No email"}
+              </p>
+            </div>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Update your name and avatar.</CardDescription>
+              <CardTitle className="text-foreground">Edit profile</CardTitle>
+              <CardDescription>Update your display name.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 text-sm text-muted-foreground">
-                Email:{" "}
-                <span className="text-foreground">
-                  {profile?.email ?? user?.email}
-                </span>
-              </div>
               <form
                 onSubmit={handleSubmit(onProfileSubmit)}
-                className="space-y-4"
+                className="space-y-5"
               >
-                <div>
-                  <label
-                    htmlFor="profile-name"
-                    className="text-sm font-medium block mb-1"
-                  >
-                    Name
-                  </label>
-                  <Input
-                    id="profile-name"
-                    {...register("name")}
-                    placeholder="Your name"
-                  />
+                <div className="space-y-2.5">
+                  <Label htmlFor="profile-name">Full name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="profile-name"
+                      className="pl-10"
+                      placeholder="Your name"
+                      {...register("name")}
+                    />
+                  </div>
                   {errors.name && (
-                    <p className="text-destructive text-sm mt-1">
+                    <p className="text-destructive text-sm">
                       {errors.name.message}
                     </p>
                   )}
                 </div>
+
                 {errors.root && (
-                  <p className="text-destructive text-sm">
-                    {errors.root.message}
-                  </p>
+                  <div className="rounded-md bg-destructive/10 p-3">
+                    <p className="text-destructive text-sm">
+                      {errors.root.message}
+                    </p>
+                  </div>
                 )}
+
                 {updateProfileMutation.isSuccess && (
-                  <p className="text-green-600 text-sm">Profile updated.</p>
+                  <div className="rounded-md bg-success/10 p-3">
+                    <p className="text-success text-sm">Profile updated.</p>
+                  </div>
                 )}
+
                 <Button
                   type="submit"
-                  variant="outline"
                   disabled={isSubmitting || updateProfileMutation.isPending}
                 >
+                  {updateProfileMutation.isPending && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
                   {updateProfileMutation.isPending
                     ? "Saving..."
                     : "Save changes"}
@@ -234,11 +280,25 @@ function SettingsPage() {
           </Card>
         </TabsContent>
 
+        {/* ---- Account Tab ---- */}
         <TabsContent value="account">
+          <div className="flex items-center gap-3 mb-6 rounded-lg bg-muted p-4">
+            <Shield className="h-5 w-5 text-muted-foreground shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              Signed in as{" "}
+              <span className="text-foreground font-medium">
+                {user?.email ?? "..."}
+              </span>
+            </p>
+          </div>
+
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Export data</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Download className="h-4 w-4 text-foreground" />
+                  <CardTitle className="text-foreground">Export data</CardTitle>
+                </div>
                 <CardDescription>
                   Download a JSON bundle of your account data.
                 </CardDescription>
@@ -249,6 +309,11 @@ function SettingsPage() {
                   onClick={() => exportMutation.mutate()}
                   disabled={exportMutation.isPending}
                 >
+                  {exportMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 shrink-0 text-foreground" />
+                  ) : (
+                    <Download className="h-4 w-4 shrink-0 text-foreground" />
+                  )}
                   {exportMutation.isPending ? "Exporting..." : "Export my data"}
                 </Button>
                 {exportMutation.isError && (
@@ -261,16 +326,23 @@ function SettingsPage() {
 
             <Card className="border-destructive">
               <CardHeader>
-                <CardTitle className="text-destructive">Danger zone</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                  <CardTitle className="text-destructive">
+                    Danger zone
+                  </CardTitle>
+                </div>
                 <CardDescription>
                   Permanently delete your account. This cannot be undone.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button
-                  variant="outline"
+                  variant="destructive"
                   onClick={() => setDeleteDialogOpen(true)}
+                  className="inline-flex items-center gap-2"
                 >
+                  <Trash2 className="h-4 w-4 shrink-0 text-white" />
                   Delete account
                 </Button>
               </CardContent>
@@ -297,7 +369,7 @@ function SettingsPage() {
           </DialogHeader>
           <form
             onSubmit={handleDeleteSubmit(onDeleteSubmit)}
-            className="space-y-4 mt-2"
+            className="space-y-4"
           >
             <Input
               {...registerDelete("confirm")}

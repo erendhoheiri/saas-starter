@@ -21,14 +21,14 @@ export function ImpersonationBanner() {
   }
 
   return (
-    <div className="bg-yellow-400 text-yellow-900 px-4 py-2 flex items-center justify-between text-sm font-medium">
+    <div className="bg-warning text-warning-foreground px-4 py-2 flex items-center justify-between text-sm font-medium">
       <span>
         Viewing as <strong>{targetUserEmail}</strong>
       </span>
       <Button
         variant="outline"
         size="sm"
-        className="border-yellow-700 text-yellow-900 hover:bg-yellow-300"
+        className="border-warning/50 text-warning-foreground hover:bg-warning/80"
         onClick={handleExit}
       >
         Exit impersonation

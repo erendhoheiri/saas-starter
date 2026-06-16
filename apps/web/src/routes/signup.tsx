@@ -7,10 +7,13 @@ import {
   CardHeader,
   CardTitle,
   Input,
+  Label,
 } from "@starter/ui";
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { z } from "zod";
+import { Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
 import { AuthLayout } from "@/components/auth-layout";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";
@@ -31,6 +34,7 @@ export const signupRoute = createRoute({
 
 function SignupPage() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -55,45 +59,110 @@ function SignupPage() {
 
   return (
     <AuthLayout>
-      <Card className="w-full max-w-md">
+      <Card className="w-full border-primary p-6 max-w-md">
         <CardHeader>
-          <CardTitle>Create account</CardTitle>
+          <CardTitle className="text-lg text-primary font-semibold">
+            Create account
+          </CardTitle>
           <CardDescription>
             Get started — it only takes a minute
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input type="text" placeholder="Full name" {...register("name")} />
-            {errors.name && (
-              <p className="text-destructive text-sm">{errors.name.message}</p>
-            )}
-            <Input type="email" placeholder="Email" {...register("email")} />
-            {errors.email && (
-              <p className="text-destructive text-sm">{errors.email.message}</p>
-            )}
-            <Input
-              type="password"
-              placeholder="Password"
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-destructive text-sm">
-                {errors.password.message}
-              </p>
-            )}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* Name */}
+            <div className="space-y-2.5">
+              <Label htmlFor="signup-name">Full name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  id="signup-name"
+                  type="text"
+                  placeholder="Jane Smith"
+                  className="pl-10"
+                  {...register("name")}
+                />
+              </div>
+              {errors.name && (
+                <p className="text-destructive text-sm">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2.5">
+              <Label htmlFor="signup-email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  id="signup-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  className="pl-10"
+                  {...register("email")}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-destructive text-sm">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2.5">
+              <Label htmlFor="signup-password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  id="signup-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="At least 8 characters"
+                  className="pl-10 pr-10"
+                  {...register("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-destructive text-sm">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            {/* Root error */}
             {errors.root && (
-              <p className="text-destructive text-sm">{errors.root.message}</p>
+              <div className="rounded-md bg-destructive/10 p-3">
+                <p className="text-destructive text-sm">
+                  {errors.root.message}
+                </p>
+              </div>
             )}
+
+            {/* Submit */}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {isSubmitting ? "Creating account..." : "Create account"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm">
+
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
               to="/login"
-              className="text-primary underline-offset-4 hover:underline"
+              className="text-primary underline-offset-4 hover:underline font-medium"
             >
               Sign in
             </Link>
