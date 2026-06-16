@@ -1,4 +1,5 @@
 import { createRoute, Outlet, redirect } from "@tanstack/react-router";
+import { AdminSidebar } from "@/components/admin-sidebar";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";
@@ -22,9 +23,12 @@ export const adminLayoutRoute = createRoute({
 
 function AdminLayout() {
   return (
-    <div className="min-h-screen">
-      <ImpersonationBanner />
-      <Outlet />
+    <div className="flex min-h-screen">
+      <AdminSidebar />
+      <div className="flex-1 flex flex-col bg-muted overflow-y-auto">
+        <ImpersonationBanner />
+        <Outlet />
+      </div>
     </div>
   );
 }
