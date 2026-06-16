@@ -1,11 +1,11 @@
-import { createRoute } from "@tanstack/react-router";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@starter/ui";
+import { createRoute } from "@tanstack/react-router";
 import { appLayoutRoute } from "@/routes/_app";
 
 export const dashboardRoute = createRoute({

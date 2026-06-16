@@ -1,5 +1,5 @@
+import { Button } from "@starter/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth";
 import { OrgSwitcher } from "./org-switcher";
 

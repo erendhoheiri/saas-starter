@@ -1,10 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+} from "@starter/ui";
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";
 

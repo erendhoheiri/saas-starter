@@ -1,8 +1,7 @@
+import { Button, Input } from "@starter/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { api as _api } from "@/lib/api";
 import { adminLayoutRoute } from "@/routes/_admin";
 

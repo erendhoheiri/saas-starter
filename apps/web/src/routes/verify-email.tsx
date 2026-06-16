@@ -1,7 +1,7 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@starter/ui";
 import { createRoute, Link, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";
 
