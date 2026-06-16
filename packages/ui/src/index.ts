@@ -65,6 +65,18 @@ export {
   DialogTrigger,
 } from "./components/dialog";
 export {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay,
+  DrawerPortal,
+  DrawerTitle,
+  DrawerTrigger,
+} from "./components/drawer";
+export {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -107,6 +119,7 @@ export {
 export { Separator } from "./components/separator";
 export { Skeleton } from "./components/skeleton";
 export { Slider } from "./components/slider";
+export { Toaster } from "./components/sonner";
 export { Switch } from "./components/switch";
 export {
   Table,
