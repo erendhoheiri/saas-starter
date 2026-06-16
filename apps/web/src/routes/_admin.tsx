@@ -23,7 +23,7 @@ export const adminLayoutRoute = createRoute({
 
 function AdminLayout() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen">
       <AdminSidebar />
       <div className="flex-1 flex flex-col bg-muted overflow-y-auto">
         <ImpersonationBanner />

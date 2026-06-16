@@ -47,7 +47,7 @@ export function OrgSwitcher({ className }: { className?: string }) {
           <ChevronDown className="h-4 w-4 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      <DropdownMenuContent align="start">
         {orgsData?.map((org: any) => (
           <DropdownMenuItem
             key={org.id}

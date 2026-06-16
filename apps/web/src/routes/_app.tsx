@@ -18,7 +18,7 @@ export const appLayoutRoute = createRoute({
 
 function AppLayout() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen">
       <AppSidebar />
       <main className="flex-1 bg-muted overflow-y-auto">
         <Outlet />
