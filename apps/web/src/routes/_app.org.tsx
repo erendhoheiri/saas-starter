@@ -481,7 +481,7 @@ function OrgPage() {
               </Button>
               <Button
                 type="submit"
-                variant="destructive"
+                variant="outline"
                 disabled={deleteOrgSubmitting || deleteOrgMutation.isPending}
               >
                 {deleteOrgMutation.isPending

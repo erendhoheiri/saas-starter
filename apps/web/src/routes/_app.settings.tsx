@@ -234,6 +234,7 @@ function SettingsPage() {
               )}
               <Button
                 type="submit"
+                variant="outline"
                 disabled={isSubmitting || updateProfileMutation.isPending}
               >
                 {updateProfileMutation.isPending ? "Saving..." : "Save changes"}
@@ -278,7 +279,7 @@ function SettingsPage() {
             </CardHeader>
             <CardContent>
               <Button
-                variant="destructive"
+                variant="outline"
                 onClick={() => setDeleteDialogOpen(true)}
               >
                 Delete account
