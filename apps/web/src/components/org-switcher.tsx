@@ -1,5 +1,6 @@
 import {
   Button,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -10,7 +11,7 @@ import { ChevronDown } from "lucide-react";
 import { useOrg } from "@/hooks/useOrg";
 import { authClient } from "@/lib/auth";
 
-export function OrgSwitcher() {
+export function OrgSwitcher({ className }: { className?: string }) {
   const queryClient = useQueryClient();
   const { data: activeOrg } = useOrg();
 
@@ -38,8 +39,12 @@ export function OrgSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          {label} <ChevronDown className="h-4 w-4" />
+        <Button
+          variant="outline"
+          className={cn("gap-2 justify-between", className)}
+        >
+          <span className="truncate">{label}</span>
+          <ChevronDown className="h-4 w-4 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
