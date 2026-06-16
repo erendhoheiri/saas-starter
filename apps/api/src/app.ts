@@ -62,6 +62,21 @@ app.all("/api/auth/*", async (c) => {
   app.route("/api/organizations", orgsProxy);
 }
 
+// --- Account routes ---
+// Lazy-proxy sub-app identical to the organizations pattern.
+{
+  const accountProxy = new Hono();
+  let _router: Hono | null = null;
+  accountProxy.all("/*", async (c) => {
+    if (!_router) {
+      const { accountRouter } = await import("./modules/account/routes");
+      _router = accountRouter;
+    }
+    return _router.fetch(c.req.raw, c.env);
+  });
+  app.route("/api/account", accountProxy);
+}
+
 // --- Routes ---
 app.get("/health", (c) => {
   return c.json({ status: "ok" });

@@ -39,9 +39,19 @@ export const setActiveOrgSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// Account schemas
+// ---------------------------------------------------------------------------
+
+export const updateProfileSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  image: z.string().url().nullable().optional(),
+});
+
+// ---------------------------------------------------------------------------
 // Inferred types
 // ---------------------------------------------------------------------------
 
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type CreateOrgInput = z.infer<typeof createOrgSchema>;
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;

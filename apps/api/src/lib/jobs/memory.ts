@@ -36,8 +36,13 @@ export class MemoryJobQueue implements JobQueue {
   }
 
   schedule(jobName: string, payload: unknown, delayMs: number): void {
+    // setTimeout only accepts 32-bit signed integer delay (max ~24.8 days).
+    // Clamp to the maximum safe value so long-running scheduled jobs (e.g.
+    // 30-day hard-delete) don't overflow and fire immediately.
+    const MAX_DELAY = 2 ** 31 - 1; // 2_147_483_647 ms ≈ 24.8 days
+    const safeDelay = Math.min(delayMs, MAX_DELAY);
     setTimeout(() => {
       this.enqueue(jobName, payload);
-    }, delayMs);
+    }, safeDelay);
   }
 }
