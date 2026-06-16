@@ -51,18 +51,18 @@
   --color-background: var(--color-slate-950);
   --color-foreground: var(--color-slate-50);
 
-  --color-card: var(--color-slate-900);
+  --color-card: var(--color-slate-800);
   --color-card-foreground: var(--color-slate-50);
 
-  --color-secondary: var(--color-slate-800);
+  --color-secondary: var(--color-slate-700);
   --color-secondary-foreground: var(--color-slate-50);
 
-  --color-muted: var(--color-slate-800);
+  --color-muted: var(--color-slate-900);
   --color-muted-foreground: var(--color-slate-400);
 
-  --color-accent: var(--color-slate-800);
+  --color-accent: var(--color-slate-700);
   --color-accent-foreground: var(--color-slate-50);
 
-  --color-border: var(--color-slate-800);
-  --color-input: var(--color-slate-800);
+  --color-border: var(--color-slate-700);
+  --color-input: var(--color-slate-700);
 }
