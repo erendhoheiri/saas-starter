@@ -17,9 +17,12 @@ export function OrgSwitcher() {
   const { data: orgsData } = useQuery({
     queryKey: ["my-orgs"],
     queryFn: async () => {
-      // authClient.organization.list() maps to /organization/list (Better Auth path-to-object).
       const result = await (authClient.organization as any).list();
-      return (result.data ?? []) as any[];
+      const data = result?.data;
+      if (Array.isArray(data)) return data as any[];
+      // Better Auth may return an object keyed by org ID
+      if (data && typeof data === "object") return Object.values(data) as any[];
+      return [] as any[];
     },
   });
 
