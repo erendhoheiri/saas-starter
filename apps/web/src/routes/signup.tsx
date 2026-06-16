@@ -11,6 +11,7 @@ import {
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { AuthLayout } from "@/components/auth-layout";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";
 
@@ -53,7 +54,7 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
+    <AuthLayout>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create account</CardTitle>
@@ -99,6 +100,6 @@ function SignupPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

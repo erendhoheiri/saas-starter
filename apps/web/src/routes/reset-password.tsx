@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { AuthLayout } from "@/components/auth-layout";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";
 
@@ -69,7 +70,7 @@ function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
+      <AuthLayout>
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Invalid link</CardTitle>
@@ -88,12 +89,12 @@ function ResetPasswordPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
+    <AuthLayout>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Reset password</CardTitle>
@@ -106,7 +107,7 @@ function ResetPasswordPage() {
               {...register("newPassword")}
             />
             {errors.newPassword && (
-              <p className="text-red-500 text-sm">
+              <p className="text-destructive text-sm">
                 {errors.newPassword.message}
               </p>
             )}
@@ -116,12 +117,12 @@ function ResetPasswordPage() {
               {...register("confirmPassword")}
             />
             {errors.confirmPassword && (
-              <p className="text-red-500 text-sm">
+              <p className="text-destructive text-sm">
                 {errors.confirmPassword.message}
               </p>
             )}
             {errors.root && (
-              <p className="text-red-500 text-sm">{errors.root.message}</p>
+              <p className="text-destructive text-sm">{errors.root.message}</p>
             )}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Resetting..." : "Reset password"}
@@ -129,6 +130,6 @@ function ResetPasswordPage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

@@ -10,6 +10,7 @@ import {
 import { createRoute, Link } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { AuthLayout } from "@/components/auth-layout";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";
 
@@ -49,7 +50,7 @@ function ForgotPasswordPage() {
 
   if (isSubmitSuccessful) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
+      <AuthLayout>
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Check your email</CardTitle>
@@ -69,12 +70,12 @@ function ForgotPasswordPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
+    <AuthLayout>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Forgot password</CardTitle>
@@ -106,6 +107,6 @@ function ForgotPasswordPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }
