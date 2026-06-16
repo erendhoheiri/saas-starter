@@ -12,8 +12,14 @@ import {
 } from "@starter/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createRoute } from "@tanstack/react-router";
+import {
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import { Building2, ChevronLeft, ChevronRight, Search, Trash2 } from "lucide-react";
 import { api as _api } from "@/lib/api";
 import { adminLayoutRoute } from "@/routes/_admin";
 
@@ -114,11 +120,19 @@ function AdminOrgsPage() {
             </TableHeader>
             <TableBody>
               {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                <TableRow key={Math.random()}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -127,7 +141,9 @@ function AdminOrgsPage() {
       ) : orgs.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center">
           <Building2 className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground">No organizations found.</p>
+          <p className="text-sm text-muted-foreground">
+            No organizations found.
+          </p>
         </div>
       ) : (
         <div className="rounded-lg border overflow-hidden">
@@ -143,8 +159,12 @@ function AdminOrgsPage() {
             <TableBody>
               {orgs.map((org) => (
                 <TableRow key={org.id}>
-                  <TableCell className="text-foreground font-medium">{org.name}</TableCell>
-                  <TableCell className="font-mono text-xs text-foreground">{org.slug}</TableCell>
+                  <TableCell className="text-foreground font-medium">
+                    {org.name}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-foreground">
+                    {org.slug}
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(org.createdAt).toLocaleDateString()}
                   </TableCell>
@@ -172,10 +192,10 @@ function AdminOrgsPage() {
             size="sm"
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
-          className="gap-1.5"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          Previous
+            className="gap-1.5"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Previous
           </Button>
           <span className="text-sm text-muted-foreground">
             Page {page} of {totalPages}
@@ -185,10 +205,10 @@ function AdminOrgsPage() {
             size="sm"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-          className="gap-1.5"
-        >
-          Next
-          <ChevronRight className="h-3.5 w-3.5" />
+            className="gap-1.5"
+          >
+            Next
+            <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       )}

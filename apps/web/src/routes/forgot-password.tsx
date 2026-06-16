@@ -9,9 +9,9 @@ import {
   Label,
 } from "@starter/ui";
 import { createRoute, Link } from "@tanstack/react-router";
+import { Loader2, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Mail } from "lucide-react";
 import { AuthLayout } from "@/components/auth-layout";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";

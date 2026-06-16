@@ -1,5 +1,5 @@
-import { useMemo } from "react";
 import { createRoute, useNavigate } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { api as _api } from "@/lib/api";
 import { signOut, useSession } from "@/lib/auth";
 import { appLayoutRoute } from "@/routes/_app";
@@ -28,9 +28,6 @@ import {
   TabsTrigger,
 } from "@starter/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 import {
   Download,
   Loader2,
@@ -39,6 +36,9 @@ import {
   Trash2,
   User,
 } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { queryClient } from "@/lib/query";
 
 export const settingsRoute = createRoute({

@@ -5,6 +5,7 @@ import { queryClient } from "@/lib/query";
 import "./styles.css";
 import App from "./App";
 
+// biome-ignore lint/style/noNonNullAssertion: intentional
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

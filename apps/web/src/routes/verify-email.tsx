@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@starter/ui";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@starter/ui";
 import { createRoute, Link, useSearch } from "@tanstack/react-router";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";

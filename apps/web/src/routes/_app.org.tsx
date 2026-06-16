@@ -4,6 +4,7 @@ import { authClient, useSession } from "@/lib/auth";
 import { appLayoutRoute } from "@/routes/_app";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: intentional
 const api = _api as any;
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,9 +30,6 @@ import {
   SelectValue,
 } from "@starter/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
 import {
   Building2,
   Loader2,
@@ -42,6 +40,9 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 import { useOrg } from "@/hooks/useOrg";
 import { queryClient } from "@/lib/query";
 
@@ -275,7 +276,9 @@ function OrgPage() {
   if (!orgId) {
     return (
       <div className="p-8 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-foreground mb-6">Organization</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">
+          Organization
+        </h1>
         <Card>
           <CardContent className="py-12 text-center">
             <Building2 className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
@@ -296,7 +299,9 @@ function OrgPage() {
           <Building2 className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{activeOrg?.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {activeOrg?.name}
+          </h1>
           <p className="text-sm text-muted-foreground">Organization</p>
         </div>
       </div>
@@ -327,7 +332,9 @@ function OrgPage() {
                   <p className="text-sm font-medium text-foreground truncate">
                     {m.user?.name ?? m.userId}
                     {m.userId === currentUserId && (
-                      <span className="ml-1.5 text-xs text-muted-foreground font-normal">(you)</span>
+                      <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                        (you)
+                      </span>
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
@@ -444,7 +451,9 @@ function OrgPage() {
                 disabled={inviteSubmitting || inviteMutation.isPending}
                 className="gap-2"
               >
-                {inviteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                {inviteMutation.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
                 <MailPlus className="h-4 w-4 shrink-0" />
                 {inviteMutation.isPending ? "Sending..." : "Send invite"}
               </Button>
@@ -459,7 +468,9 @@ function OrgPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-foreground" />
-              <CardTitle className="text-foreground">Organization settings</CardTitle>
+              <CardTitle className="text-foreground">
+                Organization settings
+              </CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -501,7 +512,9 @@ function OrgPage() {
                 variant="default"
                 disabled={orgSubmitting || updateOrgMutation.isPending}
               >
-                {updateOrgMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                {updateOrgMutation.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
                 {updateOrgMutation.isPending ? "Saving..." : "Save changes"}
               </Button>
             </form>
@@ -587,8 +600,12 @@ function OrgPage() {
                 disabled={deleteOrgSubmitting || deleteOrgMutation.isPending}
                 className="gap-2"
               >
-                {deleteOrgMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {deleteOrgMutation.isPending ? "Deleting..." : "Delete organization"}
+                {deleteOrgMutation.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {deleteOrgMutation.isPending
+                  ? "Deleting..."
+                  : "Delete organization"}
               </Button>
             </div>
           </form>

@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { cn } from "@starter/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Building2, LayoutDashboard, LogOut, Settings } from "lucide-react";
-import { cn } from "@starter/ui";
+import { useMemo } from "react";
 import { signOut, useSession } from "@/lib/auth";
 import { OrgSwitcher } from "./org-switcher";
 
@@ -23,6 +23,7 @@ function getInitials(name: string) {
 export function AppSidebar() {
   const navigate = useNavigate();
   const { data: session } = useSession();
+  // biome-ignore lint/suspicious/noExplicitAny: intentional
   const user = (session as any)?.user;
   const initials = useMemo(
     () => (user?.name ? getInitials(user.name) : "U"),
@@ -88,6 +89,7 @@ export function AppSidebar() {
             </p>
           </div>
           <button
+            type="button"
             onClick={handleLogout}
             title="Sign out"
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"

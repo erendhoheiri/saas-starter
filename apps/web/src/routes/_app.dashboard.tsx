@@ -6,9 +6,9 @@ import {
   CardTitle,
 } from "@starter/ui";
 import { createRoute, Link } from "@tanstack/react-router";
-import { appLayoutRoute } from "@/routes/_app";
+import { ArrowRight, Settings, Users } from "lucide-react";
 import { useSession } from "@/lib/auth";
-import { Settings, Users, ArrowRight } from "lucide-react";
+import { appLayoutRoute } from "@/routes/_app";
 
 export const dashboardRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
@@ -18,6 +18,7 @@ export const dashboardRoute = createRoute({
 
 function DashboardPage() {
   const { data: session } = useSession();
+  // biome-ignore lint/suspicious/noExplicitAny: intentional
   const user = (session as any)?.user;
 
   const greeting = (() => {
@@ -126,15 +127,29 @@ function DashboardPage() {
             </div>
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">1</span>
-                Explore the <Link to="/settings" className="text-primary hover:underline">settings</Link> to update your profile
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  1
+                </span>
+                Explore the{" "}
+                <Link to="/settings" className="text-primary hover:underline">
+                  settings
+                </Link>{" "}
+                to update your profile
               </li>
               <li className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">2</span>
-                Invite team members from the <Link to="/org" className="text-primary hover:underline">organization</Link> page
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  2
+                </span>
+                Invite team members from the{" "}
+                <Link to="/org" className="text-primary hover:underline">
+                  organization
+                </Link>{" "}
+                page
               </li>
               <li className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">3</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  3
+                </span>
                 Configure your project settings and preferences
               </li>
             </ul>

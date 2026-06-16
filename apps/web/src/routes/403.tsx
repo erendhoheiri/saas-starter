@@ -1,10 +1,4 @@
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@starter/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@starter/ui";
 import { createRoute, Link } from "@tanstack/react-router";
 import { rootRoute } from "@/router";
 

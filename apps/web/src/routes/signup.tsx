@@ -10,10 +10,10 @@ import {
   Label,
 } from "@starter/ui";
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useForm } from "react-hook-form";
-import { useState } from "react";
-import { z } from "zod";
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { AuthLayout } from "@/components/auth-layout";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/router";

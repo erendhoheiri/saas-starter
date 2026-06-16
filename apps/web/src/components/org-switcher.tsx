@@ -1,4 +1,3 @@
-import { useRef, useState } from "react";
 import {
   cn,
   DropdownMenu,
@@ -8,6 +7,7 @@ import {
 } from "@starter/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Check, ChevronsUpDown } from "lucide-react";
+import { useRef, useState } from "react";
 import { useOrg } from "@/hooks/useOrg";
 import { authClient } from "@/lib/auth";
 
@@ -40,6 +40,7 @@ export function OrgSwitcher({ className }: { className?: string }) {
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
+          type="button"
           ref={triggerRef}
           className={cn(
             "flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors",
@@ -78,7 +79,9 @@ export function OrgSwitcher({ className }: { className?: string }) {
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent text-[10px] font-semibold text-accent-foreground">
               {org.name?.charAt(0)?.toUpperCase() ?? "O"}
             </div>
-            <span className="flex-1 truncate text-popover-foreground">{org.name}</span>
+            <span className="flex-1 truncate text-popover-foreground">
+              {org.name}
+            </span>
             {org.id === activeOrg?.id && (
               <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
             )}

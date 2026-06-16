@@ -12,8 +12,16 @@ import {
 } from "@starter/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createRoute, useNavigate } from "@tanstack/react-router";
+import {
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Search,
+  UserCheck,
+  Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import { Ban, ChevronLeft, ChevronRight, Eye, Search, ShieldCheck, ShieldX, UserCheck, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { adminLayoutRoute } from "@/routes/_admin";
 
@@ -154,13 +162,25 @@ function AdminUsersPage() {
             </TableHeader>
             <TableBody>
               {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-36" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                <TableRow key={Math.random()}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-36" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-12" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -187,8 +207,12 @@ function AdminUsersPage() {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="text-foreground">{user.email}</TableCell>
-                  <TableCell className="text-foreground">{user.name ?? "—"}</TableCell>
+                  <TableCell className="text-foreground">
+                    {user.email}
+                  </TableCell>
+                  <TableCell className="text-foreground">
+                    {user.name ?? "—"}
+                  </TableCell>
                   <TableCell>
                     {user.role === "admin" ? (
                       <Badge variant="default">admin</Badge>

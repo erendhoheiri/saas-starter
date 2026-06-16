@@ -3,6 +3,7 @@ import { authClient, useSession } from "@/lib/auth";
 
 export function useOrg() {
   const { data: session } = useSession();
+  // biome-ignore lint/suspicious/noExplicitAny: intentional
   const activeOrgId = (session as any)?.session?.activeOrganizationId as
     | string
     | undefined;
