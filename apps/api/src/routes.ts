@@ -16,7 +16,7 @@
 import { Hono } from "hono";
 import { accountRouter } from "./modules/account/routes";
 import { adminRouter } from "./modules/admin/routes";
-import { organizationsRouter } from "./modules/organizations/routes";
+import { organizationsRouter } from "./modules/organization/routes";
 
 const routes = new Hono()
   .route("/api/organizations", organizationsRouter)

@@ -68,7 +68,7 @@ app.all("/api/auth/*", async (c) => {
   app.mount("/api/organizations", async (req, env) => {
     if (!_orgsRouter) {
       const { organizationsRouter } = await import(
-        "./modules/organizations/routes"
+        "./modules/organization/routes"
       );
       _orgsRouter = organizationsRouter;
     }

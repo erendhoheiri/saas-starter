@@ -1,0 +1,18 @@
+import { describe, expect, it } from "bun:test";
+
+describe("admin modules", () => {
+  it("admin users module exports a route", async () => {
+    const { adminUsersRoute } = await import("./users");
+    expect(adminUsersRoute).toBeDefined();
+  });
+  it("admin orgs module exports a route", async () => {
+    const { adminOrgsRoute } = await import("./orgs");
+    expect(adminOrgsRoute).toBeDefined();
+  });
+  it("impersonation banner exports component", async () => {
+    const { ImpersonationBanner } = await import(
+      "../components/impersonation-banner"
+    );
+    expect(typeof ImpersonationBanner).toBe("function");
+  });
+});

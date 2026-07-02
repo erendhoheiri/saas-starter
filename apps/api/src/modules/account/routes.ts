@@ -1,34 +1,20 @@
 /**
- * Account routes.
+ * Account routes — HTTP layer only. Handlers read the request/context, delegate
+ * to the account service, and shape the JSON response.
  *
- * Route layout:
- *   GET    /me          — return current user profile
+ *   GET    /me          — current user profile
  *   PATCH  /me          — update profile (name, image)
  *   GET    /export      — data export bundle
  *   DELETE /me          — delete account (cascade)
  *   DELETE /orgs/:orgId — soft-delete org (owner only)
- *
- * All routes require authMiddleware. Org deletion additionally verifies
- * ownership inside the handler (no activeOrganizationId needed for this
- * endpoint — the orgId comes from the URL param).
  */
 
-import { updateProfileSchema } from "@starter/shared";
+import { type UpdateProfileInput, updateProfileSchema } from "@starter/shared";
 import { Hono } from "hono";
 import { validator } from "hono/validator";
 import type { ZodTypeAny } from "zod";
 import { authMiddleware } from "../../middleware/auth";
-import {
-  deleteAccountHandler,
-  deleteOrgHandler,
-  exportHandler,
-  getMeHandler,
-  updateMeHandler,
-} from "./handlers";
-
-// ---------------------------------------------------------------------------
-// Validator factory
-// ---------------------------------------------------------------------------
+import * as accountService from "./service";
 
 function zJson<T extends ZodTypeAny>(schema: T) {
   return validator("json", (value, c) => {
@@ -43,28 +29,49 @@ function zJson<T extends ZodTypeAny>(schema: T) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Router
-// ---------------------------------------------------------------------------
-
 export const accountRouter = new Hono();
 
-// GET /api/account/me — current user profile
-accountRouter.get("/me", authMiddleware(), getMeHandler);
+accountRouter.get("/me", authMiddleware(), (c) => {
+  const user = c.get("user");
+  return c.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    image: user.image ?? null,
+    role: user.role,
+    emailVerified: user.emailVerified,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  });
+});
 
-// PATCH /api/account/me — update profile
 accountRouter.patch(
   "/me",
   authMiddleware(),
   zJson(updateProfileSchema),
-  updateMeHandler,
+  async (c) => {
+    const user = c.get("user");
+    const body = c.req.valid("json" as never) as UpdateProfileInput;
+    const updated = await accountService.updateProfile(user.id, body);
+    return c.json(updated);
+  },
 );
 
-// GET /api/account/export — data export
-accountRouter.get("/export", authMiddleware(), exportHandler);
+accountRouter.get("/export", authMiddleware(), async (c) => {
+  const user = c.get("user");
+  const data = await accountService.getExport(user.id);
+  return c.json({ exportedAt: new Date().toISOString(), ...data });
+});
 
-// DELETE /api/account/me — delete account
-accountRouter.delete("/me", authMiddleware(), deleteAccountHandler);
+accountRouter.delete("/me", authMiddleware(), async (c) => {
+  const user = c.get("user");
+  await accountService.deleteAccount(user.id);
+  return c.json({ success: true });
+});
 
-// DELETE /api/account/orgs/:orgId — delete org (owner only)
-accountRouter.delete("/orgs/:orgId", authMiddleware(), deleteOrgHandler);
+accountRouter.delete("/orgs/:orgId", authMiddleware(), async (c) => {
+  const user = c.get("user");
+  const orgId = c.req.param("orgId");
+  await accountService.deleteOrg(user.id, orgId);
+  return c.json({ success: true, orgId });
+});

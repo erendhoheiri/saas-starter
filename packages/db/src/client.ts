@@ -26,6 +26,13 @@ export function createDb(url: string) {
 export type Database = ReturnType<typeof createDb>["db"];
 
 /**
+ * A transaction handle, as passed to the `db.transaction(async (tx) => …)`
+ * callback. Repository functions accept `Database | Transaction` so they can be
+ * composed inside a transaction.
+ */
+export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+
+/**
  * Lazily-initialised shared application client, connected to `DATABASE_URL`.
  *
  * Initialisation is deferred until first use so that merely importing this
