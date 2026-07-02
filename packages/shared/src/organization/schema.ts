@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-// ---------------------------------------------------------------------------
-// Request schemas
-// ---------------------------------------------------------------------------
+/** Organization membership roles, most→least privileged. */
+export const roleSchema = z.enum(["owner", "admin", "member"]);
 
 export const createOrgSchema = z.object({
   name: z.string().min(1).max(100),
@@ -16,15 +15,19 @@ export const createOrgSchema = z.object({
     ),
 });
 
+export const updateOrgSchema = z.object({
+  name: z.string().min(1, "Name required").max(100),
+});
+
 export const inviteMemberSchema = z.object({
   email: z.string().email(),
-  role: z.enum(["owner", "admin", "member"]),
+  role: roleSchema,
   organizationId: z.string().optional(),
 });
 
 export const updateMemberRoleSchema = z.object({
   memberId: z.string().min(1),
-  role: z.enum(["owner", "admin", "member"]),
+  role: roleSchema,
   organizationId: z.string().optional(),
 });
 
@@ -41,21 +44,9 @@ export const setActiveOrgSchema = z.object({
   organizationId: z.string().nullable().optional(),
 });
 
-// ---------------------------------------------------------------------------
-// Account schemas
-// ---------------------------------------------------------------------------
-
-export const updateProfileSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  image: z.string().url().nullable().optional(),
-});
-
-// ---------------------------------------------------------------------------
-// Inferred types
-// ---------------------------------------------------------------------------
-
-export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type Role = z.infer<typeof roleSchema>;
 export type CreateOrgInput = z.infer<typeof createOrgSchema>;
+export type UpdateOrgInput = z.infer<typeof updateOrgSchema>;
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;
 export type RemoveMemberInput = z.infer<typeof removeMemberSchema>;
