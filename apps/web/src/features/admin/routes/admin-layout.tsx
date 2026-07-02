@@ -1,6 +1,6 @@
 import { createRoute, Outlet, redirect } from "@tanstack/react-router";
-import { AdminSidebar } from "@/components/admin-sidebar";
-import { ImpersonationBanner } from "@/components/impersonation-banner";
+import { AdminSidebar } from "@/features/admin/components/admin-sidebar";
+import { ImpersonationBanner } from "@/features/admin/components/impersonation-banner";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/root-route";
 

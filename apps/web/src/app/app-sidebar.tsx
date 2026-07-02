@@ -1,7 +1,7 @@
 import { Building2, LayoutDashboard, Settings } from "lucide-react";
-import { type NavItem, NavSidebar } from "./nav-sidebar";
-import { OrgSwitcher } from "./org-switcher";
-import { UserMenu } from "./user-menu";
+import { type NavItem, NavSidebar } from "@/components/nav-sidebar";
+import { UserMenu } from "@/components/user-menu";
+import { OrgSwitcher } from "@/features/organization/components/org-switcher";
 
 const NAV_ITEMS: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },

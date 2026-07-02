@@ -1,3 +1,4 @@
+import type { AdminOrg } from "@starter/shared";
 import {
   Badge,
   Button,
@@ -21,24 +22,16 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Page, PageHeader } from "@/components/page";
+import { adminLayoutRoute } from "@/features/admin/routes/admin-layout";
 import { useDebounce } from "@/hooks/useDebounce";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/format";
-import { adminLayoutRoute } from "@/routes/_admin";
 
 export const adminOrgsRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/admin/orgs",
   component: AdminOrgsPage,
 });
-
-type AdminOrg = {
-  id: string;
-  name: string;
-  slug: string;
-  deletedAt: string | Date | null;
-  createdAt: string | Date;
-};
 
 const COLUMNS = ["Name", "Slug", "Created", "Status"];
 

@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Building2, Shield, Users } from "lucide-react";
-import { type NavItem, NavSidebar } from "./nav-sidebar";
-import { UserMenu } from "./user-menu";
+import { type NavItem, NavSidebar } from "@/components/nav-sidebar";
+import { UserMenu } from "@/components/user-menu";
 
 const ADMIN_NAV: NavItem[] = [
   { to: "/admin/users", label: "Users", icon: Users },

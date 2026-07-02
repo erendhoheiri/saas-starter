@@ -7,9 +7,9 @@ import {
   Settings,
   Sparkles,
 } from "lucide-react";
+import { appLayoutRoute } from "@/app/app-layout";
 import { Page } from "@/components/page";
-import { useAuth } from "@/hooks/useAuth";
-import { appLayoutRoute } from "@/routes/_app";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const dashboardRoute = createRoute({
   getParentRoute: () => appLayoutRoute,

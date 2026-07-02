@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import { forgotPasswordSchema } from "@/routes/forgot-password";
-import { loginSchema } from "@/routes/login";
-import { resetPasswordSchema } from "@/routes/reset-password";
-import { signupSchema } from "@/routes/signup";
+import { forgotPasswordSchema } from "@/features/auth/routes/forgot-password";
+import { loginSchema } from "@/features/auth/routes/login";
+import { resetPasswordSchema } from "@/features/auth/routes/reset-password";
+import { signupSchema } from "@/features/auth/routes/signup";
 
 describe("login form schema", () => {
   it("rejects invalid email", () => {

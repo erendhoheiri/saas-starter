@@ -12,9 +12,9 @@ import { createRoute, Link } from "@tanstack/react-router";
 import { Loader2, Mail, MailCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { AuthLayout } from "@/components/auth-layout";
-import { TextField } from "@/components/fields";
-import { FormError } from "@/components/form-error";
+import { AuthLayout } from "@/features/auth/components/auth-layout";
+import { TextField } from "@/features/auth/components/fields";
+import { FormError } from "@/features/auth/components/form-error";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/root-route";
 

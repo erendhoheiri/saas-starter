@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { AccountProfile } from "@starter/shared";
 import {
   Button,
   Card,
@@ -27,14 +28,14 @@ import { Download, Loader2, Settings, Trash2, User } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { TextField } from "@/components/fields";
+import { appLayoutRoute } from "@/app/app-layout";
 import { Page, PageHeader } from "@/components/page";
 import { UserAvatar } from "@/components/user-avatar";
-import { useAuth } from "@/hooks/useAuth";
+import { TextField } from "@/features/auth/components/fields";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { api } from "@/lib/api";
 import { signOut } from "@/lib/auth";
 import { queryClient } from "@/lib/query";
-import { appLayoutRoute } from "@/routes/_app";
 
 export const settingsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
@@ -49,13 +50,6 @@ type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
 
 const DELETE_PHRASE = "delete my account";
 
-interface Profile {
-  id: string;
-  name: string;
-  email: string;
-  image: string | null;
-}
-
 function SettingsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -64,9 +58,9 @@ function SettingsPage() {
 
   const { data: profile } = useQuery({
     queryKey: ["account", "me"],
-    queryFn: async (): Promise<Profile> => {
+    queryFn: async (): Promise<AccountProfile> => {
       const res = await api.api.account.me.$get();
-      return (await res.json()) as Profile;
+      return (await res.json()) as AccountProfile;
     },
     enabled: !!user,
   });

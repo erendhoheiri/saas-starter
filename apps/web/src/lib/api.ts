@@ -1,4 +1,10 @@
 import type { AppType } from "@starter/api/routes";
+import type {
+  AccountProfile,
+  AdminOrg,
+  AdminUser,
+  Paginated,
+} from "@starter/shared";
 import { hc } from "hono/client";
 
 // In dev (VITE_API_URL unset) requests go to the same origin as the page,
@@ -25,37 +31,6 @@ interface PageQuery {
   q?: string;
   page?: string;
   limit?: string;
-}
-
-interface Paginated<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-export interface AdminUser {
-  id: string;
-  email: string;
-  name: string | null;
-  role: string | null;
-  bannedAt: string | Date | null;
-  createdAt: string | Date;
-}
-
-export interface AdminOrg {
-  id: string;
-  name: string;
-  slug: string;
-  deletedAt: string | Date | null;
-  createdAt: string | Date;
-}
-
-export interface AccountProfile {
-  id: string;
-  name: string;
-  email: string;
-  image: string | null;
 }
 
 type UserAction = { $post(args: { param: { userId: string } }): Promise<Res> };

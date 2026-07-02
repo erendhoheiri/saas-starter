@@ -10,7 +10,7 @@ import {
 } from "@starter/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Check, LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { signOut } from "@/lib/auth";
 import { UserAvatar } from "./user-avatar";
 

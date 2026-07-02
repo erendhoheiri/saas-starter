@@ -1,3 +1,4 @@
+import type { AdminUser } from "@starter/shared";
 import {
   Badge,
   Button,
@@ -24,25 +25,16 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Page, PageHeader } from "@/components/page";
+import { adminLayoutRoute } from "@/features/admin/routes/admin-layout";
 import { useDebounce } from "@/hooks/useDebounce";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/format";
-import { adminLayoutRoute } from "@/routes/_admin";
 
 export const adminUsersRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/admin/users",
   component: AdminUsersPage,
 });
-
-type AdminUser = {
-  id: string;
-  email: string;
-  name: string | null;
-  role: string | null;
-  bannedAt: string | Date | null;
-  createdAt: string | Date;
-};
 
 const COLUMNS = ["Email", "Name", "Role", "Status", "Created", "Actions"];
 

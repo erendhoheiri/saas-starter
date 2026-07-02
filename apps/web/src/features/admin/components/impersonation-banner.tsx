@@ -2,7 +2,7 @@ import { Button } from "@starter/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { api } from "@/lib/api";
 
 export function ImpersonationBanner() {

@@ -1,12 +1,9 @@
+import type { Org } from "@starter/shared";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { authClient } from "@/lib/auth";
 
-export interface Org {
-  id: string;
-  name: string;
-  slug?: string;
-}
+export type { Org };
 
 /** The user's organizations (Better Auth `organization.list`). */
 export function useOrgs() {

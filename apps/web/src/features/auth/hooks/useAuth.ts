@@ -1,22 +1,13 @@
+import type { AuthUser } from "@starter/shared";
 import { useSession } from "@/lib/auth";
 
-/**
- * Application user shape.
- *
- * Better Auth's client-side session type does not include the extra columns
- * the Drizzle adapter passes through (`role`, `bannedAt`) nor is it convenient
- * to reach into `session.session`. This hook narrows the loosely-typed client
- * session into a single strongly-typed accessor so the rest of the app never
- * needs an `as any`.
- */
-export interface AuthUser {
-  id: string;
-  name: string | null;
-  email: string;
-  image: string | null;
-  role: string | null;
-}
+export type { AuthUser };
 
+/**
+ * Narrows Better Auth's loosely-typed client session into a single strongly-
+ * typed accessor (adding `role` from the Drizzle adapter) so the rest of the
+ * app never needs an `as any`. The `AuthUser` shape is the shared contract.
+ */
 interface AuthState {
   user: AuthUser | null;
   activeOrganizationId: string | null;

@@ -1,5 +1,5 @@
 import { createRoute, Outlet, redirect } from "@tanstack/react-router";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/app/app-sidebar";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/root-route";
 

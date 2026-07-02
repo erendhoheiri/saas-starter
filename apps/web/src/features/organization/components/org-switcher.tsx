@@ -9,7 +9,7 @@ import {
 } from "@starter/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Building2, Check, ChevronsUpDown } from "lucide-react";
-import { useOrg, useOrgs } from "@/hooks/useOrg";
+import { useOrg, useOrgs } from "@/features/organization/hooks/useOrg";
 import { authClient } from "@/lib/auth";
 
 export function OrgSwitcher({ className }: { className?: string }) {

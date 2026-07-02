@@ -3,7 +3,7 @@ import { createRoute, Link, useSearch } from "@tanstack/react-router";
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { AuthLayout } from "@/components/auth-layout";
+import { AuthLayout } from "@/features/auth/components/auth-layout";
 import { authClient } from "@/lib/auth";
 import { rootRoute } from "@/root-route";
 

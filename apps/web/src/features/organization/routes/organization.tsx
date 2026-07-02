@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Member } from "@starter/shared";
 import {
   Badge,
   Button,
@@ -42,15 +43,15 @@ import {
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { TextField } from "@/components/fields";
+import { appLayoutRoute } from "@/app/app-layout";
 import { Page, PageHeader } from "@/components/page";
 import { UserAvatar } from "@/components/user-avatar";
-import { useAuth } from "@/hooks/useAuth";
-import { useOrg } from "@/hooks/useOrg";
+import { TextField } from "@/features/auth/components/fields";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useOrg } from "@/features/organization/hooks/useOrg";
 import { api } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { queryClient } from "@/lib/query";
-import { appLayoutRoute } from "@/routes/_app";
 
 export const orgRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
@@ -68,13 +69,6 @@ const updateOrgSchema = z.object({
   name: z.string().min(1, "Name required").max(100),
 });
 type UpdateOrgForm = z.infer<typeof updateOrgSchema>;
-
-interface Member {
-  id: string;
-  userId: string;
-  role: string;
-  user: { name: string; email: string };
-}
 
 const DELETE_PHRASE = "delete organization";
 

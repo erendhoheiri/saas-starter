@@ -3,17 +3,23 @@ import { z } from "zod";
 
 describe("page modules", () => {
   it("dashboard page exports a route", async () => {
-    const { dashboardRoute } = await import("./_app.dashboard");
+    const { dashboardRoute } = await import(
+      "@/features/dashboard/routes/dashboard"
+    );
     expect(dashboardRoute).toBeDefined();
   });
 
   it("settings page exports a route", async () => {
-    const { settingsRoute } = await import("./_app.settings");
+    const { settingsRoute } = await import(
+      "@/features/account/routes/settings"
+    );
     expect(settingsRoute).toBeDefined();
   });
 
   it("org page exports a route", async () => {
-    const { orgRoute } = await import("./_app.org");
+    const { orgRoute } = await import(
+      "@/features/organization/routes/organization"
+    );
     expect(orgRoute).toBeDefined();
   });
 });
@@ -39,7 +45,9 @@ describe("account deletion flow", () => {
   });
 
   it("invite member schema validates email and role", async () => {
-    const { inviteSchema } = await import("./_app.org");
+    const { inviteSchema } = await import(
+      "@/features/organization/routes/organization"
+    );
     expect(
       inviteSchema.safeParse({ email: "user@example.com", role: "member" })
         .success,

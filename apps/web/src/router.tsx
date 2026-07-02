@@ -1,19 +1,19 @@
 import { createRouter } from "@tanstack/react-router";
+import { appLayoutRoute } from "@/app/app-layout";
+import { forbiddenRoute } from "@/app/forbidden";
+import { indexRoute } from "@/app/index-route";
+import { settingsRoute } from "@/features/account/routes/settings";
+import { adminLayoutRoute } from "@/features/admin/routes/admin-layout";
+import { adminOrgsRoute } from "@/features/admin/routes/orgs";
+import { adminUsersRoute } from "@/features/admin/routes/users";
+import { forgotPasswordRoute } from "@/features/auth/routes/forgot-password";
+import { loginRoute } from "@/features/auth/routes/login";
+import { resetPasswordRoute } from "@/features/auth/routes/reset-password";
+import { signupRoute } from "@/features/auth/routes/signup";
+import { verifyEmailRoute } from "@/features/auth/routes/verify-email";
+import { dashboardRoute } from "@/features/dashboard/routes/dashboard";
+import { orgRoute } from "@/features/organization/routes/organization";
 import { rootRoute } from "@/root-route";
-import { adminLayoutRoute } from "@/routes/_admin";
-import { adminOrgsRoute } from "@/routes/_admin.orgs";
-import { adminUsersRoute } from "@/routes/_admin.users";
-import { appLayoutRoute } from "@/routes/_app";
-import { dashboardRoute } from "@/routes/_app.dashboard";
-import { orgRoute } from "@/routes/_app.org";
-import { settingsRoute } from "@/routes/_app.settings";
-import { forbiddenRoute } from "@/routes/403";
-import { forgotPasswordRoute } from "@/routes/forgot-password";
-import { indexRoute } from "@/routes/index";
-import { loginRoute } from "@/routes/login";
-import { resetPasswordRoute } from "@/routes/reset-password";
-import { signupRoute } from "@/routes/signup";
-import { verifyEmailRoute } from "@/routes/verify-email";
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
