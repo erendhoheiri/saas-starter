@@ -58,10 +58,10 @@ export function NavSidebar({
         </Link>
       </div>
 
-      {topSlot ? <div className="px-3 pt-3">{topSlot}</div> : null}
+      {topSlot ? <div className="px-2 pt-3">{topSlot}</div> : null}
 
-      {/* Navigation */}
-      <div className="px-4 pb-1 pt-4">
+      {/* Navigation — label inset (px-5 = nav px-2 + item px-3) aligns with item icons */}
+      <div className="px-5 pb-1 pt-4">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           {sectionLabel}
         </p>

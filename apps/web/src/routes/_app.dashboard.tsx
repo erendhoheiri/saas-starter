@@ -88,7 +88,7 @@ function DashboardPage() {
       </div>
 
       <Card className="mt-4">
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-4">
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" />
             <h2 className="font-medium text-foreground">Getting started</h2>

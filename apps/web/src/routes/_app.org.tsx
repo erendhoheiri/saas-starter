@@ -325,7 +325,7 @@ function OrgPage() {
                 onSubmit={inviteForm.handleSubmit((d) =>
                   inviteMutation.mutate(d),
                 )}
-                className="flex flex-col gap-4 sm:flex-row sm:items-start"
+                className="flex flex-col gap-4 sm:flex-row sm:items-end"
               >
                 <div className="flex-1">
                   <TextField
@@ -361,11 +361,7 @@ function OrgPage() {
                     </FormItem>
                   )}
                 />
-                <Button
-                  type="submit"
-                  disabled={inviteMutation.isPending}
-                  className="sm:mt-[26px]"
-                >
+                <Button type="submit" disabled={inviteMutation.isPending}>
                   {inviteMutation.isPending && (
                     <Loader2 className="size-4 animate-spin" />
                   )}
