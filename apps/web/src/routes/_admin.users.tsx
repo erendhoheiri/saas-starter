@@ -9,6 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  toast,
 } from "@starter/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createRoute, useNavigate } from "@tanstack/react-router";
@@ -21,8 +22,11 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Page, PageHeader } from "@/components/page";
+import { useDebounce } from "@/hooks/useDebounce";
 import { api } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import { adminLayoutRoute } from "@/routes/_admin";
 
 export const adminUsersRoute = createRoute({
@@ -40,14 +44,7 @@ type AdminUser = {
   createdAt: string | Date;
 };
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
+const COLUMNS = ["Email", "Name", "Role", "Status", "Created", "Actions"];
 
 function AdminUsersPage() {
   const [search, setSearch] = useState("");
@@ -59,55 +56,68 @@ function AdminUsersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-users", debouncedSearch, page],
     queryFn: async () => {
-      const res = await (api as any).api.admin.users.$get({
+      const res = await api.api.admin.users.$get({
         query: {
           q: debouncedSearch || undefined,
           page: String(page),
           limit: "20",
         },
       });
-      return res.json() as Promise<{
+      return (await res.json()) as {
         data: AdminUser[];
         total: number;
         page: number;
         limit: number;
-      }>;
+      };
     },
   });
 
-  const suspendMutation = useMutation({
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+
+  const suspend = useMutation({
     mutationFn: async (userId: string) => {
-      const res = await (api as any).api.admin.users[":userId"].suspend.$post({
+      const res = await api.api.admin.users[":userId"].suspend.$post({
         param: { userId },
       });
+      if (!res.ok) throw new Error();
       return res.json();
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("User suspended");
+    },
+    onError: () => toast.error("Failed to suspend user"),
   });
 
-  const unsuspendMutation = useMutation({
+  const unsuspend = useMutation({
     mutationFn: async (userId: string) => {
-      const res = await (api as any).api.admin.users[":userId"].unsuspend.$post(
-        { param: { userId } },
-      );
+      const res = await api.api.admin.users[":userId"].unsuspend.$post({
+        param: { userId },
+      });
+      if (!res.ok) throw new Error();
       return res.json();
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("User reinstated");
+    },
+    onError: () => toast.error("Failed to reinstate user"),
   });
 
-  const impersonateMutation = useMutation({
+  const impersonate = useMutation({
     mutationFn: async (userId: string) => {
-      const res = await (api as any).api.admin.users[
-        ":userId"
-      ].impersonate.$post({ param: { userId } });
+      const res = await api.api.admin.users[":userId"].impersonate.$post({
+        param: { userId },
+      });
+      if (!res.ok) throw new Error();
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
       navigate({ to: "/admin/users" });
     },
+    onError: () => toast.error("Failed to impersonate user"),
   });
 
   const users = data?.data ?? [];
@@ -116,28 +126,25 @@ function AdminUsersPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-          <Users className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Users</h1>
-          <p className="text-sm text-muted-foreground">Manage user accounts</p>
-        </div>
-      </div>
+    <Page>
+      <PageHeader
+        icon={Users}
+        title="Users"
+        description="Manage user accounts across the platform"
+      />
 
-      <div className="mb-4 flex items-center gap-2">
-        <div className="relative max-w-sm w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+      <div className="mb-4 flex items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by email or name..."
+            aria-label="Search users"
+            placeholder="Search by email or name…"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="pl-10"
+            className="pl-9"
           />
         </div>
         {total > 0 && (
@@ -147,139 +154,111 @@ function AdminUsersPage() {
         )}
       </div>
 
-      {isLoading ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Suspended</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={Math.random()}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-36" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-16" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-12" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-20" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-28" />
-                  </TableCell>
-                </TableRow>
+      <div className="overflow-hidden rounded-lg border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              {COLUMNS.map((c) => (
+                <TableHead key={c}>{c}</TableHead>
               ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : users.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center">
-          <Users className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground">No users found.</p>
-        </div>
-      ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
-            <TableHeader>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton rows
+                <TableRow key={`skeleton-${i}`}>
+                  {COLUMNS.map((c) => (
+                    <TableCell key={c}>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : users.length === 0 ? (
               <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Suspended</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableCell
+                  colSpan={COLUMNS.length}
+                  className="py-12 text-center"
+                >
+                  <Users className="mx-auto mb-3 size-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    No users found.
+                  </p>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
+            ) : (
+              users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="text-foreground">
+                  <TableCell className="font-medium text-foreground">
                     {user.email}
                   </TableCell>
-                  <TableCell className="text-foreground">
+                  <TableCell className="text-muted-foreground">
                     {user.name ?? "—"}
                   </TableCell>
                   <TableCell>
-                    {user.role === "admin" ? (
-                      <Badge variant="default">admin</Badge>
-                    ) : user.role === "user" ? (
-                      <Badge variant="secondary">user</Badge>
-                    ) : (
-                      <Badge variant="outline">{user.role ?? "user"}</Badge>
-                    )}
+                    <Badge
+                      variant={user.role === "admin" ? "default" : "secondary"}
+                    >
+                      {user.role ?? "user"}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {user.bannedAt ? (
                       <Badge variant="destructive">
-                        <Ban className="h-3 w-3 mr-1" />
+                        <Ban />
                         Suspended
                       </Badge>
                     ) : (
-                      <span className="text-muted-foreground">Active</span>
+                      <Badge variant="success">Active</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {formatDate(user.createdAt)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       {user.bannedAt ? (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => unsuspendMutation.mutate(user.id)}
-                          disabled={unsuspendMutation.isPending}
-                          className="gap-1.5"
+                          onClick={() => unsuspend.mutate(user.id)}
+                          disabled={unsuspend.isPending}
                         >
-                          <UserCheck className="h-3.5 w-3.5" />
-                          Unsuspend
+                          <UserCheck className="size-3.5" />
+                          Reinstate
                         </Button>
                       ) : (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => suspendMutation.mutate(user.id)}
-                          disabled={suspendMutation.isPending}
-                          className="gap-1.5"
+                          onClick={() => suspend.mutate(user.id)}
+                          disabled={suspend.isPending}
                         >
-                          <Ban className="h-3.5 w-3.5" />
+                          <Ban className="size-3.5" />
                           Suspend
                         </Button>
                       )}
                       {user.role !== "admin" && !user.bannedAt && (
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          onClick={() => impersonateMutation.mutate(user.id)}
-                          disabled={impersonateMutation.isPending}
-                          className="gap-1.5"
+                          aria-label={`Impersonate ${user.email}`}
+                          onClick={() => impersonate.mutate(user.id)}
+                          disabled={impersonate.isPending}
                         >
-                          <Eye className="h-3.5 w-3.5" />
+                          <Eye className="size-3.5" />
                           Impersonate
                         </Button>
                       )}
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-center gap-2">
@@ -288,12 +267,11 @@ function AdminUsersPage() {
             size="sm"
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
-            className="gap-1.5"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="size-3.5" />
             Previous
           </Button>
-          <span className="text-sm text-muted-foreground px-2">
+          <span className="px-2 text-sm text-muted-foreground">
             Page {page} of {totalPages}
           </span>
           <Button
@@ -301,13 +279,12 @@ function AdminUsersPage() {
             size="sm"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="gap-1.5"
           >
             Next
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="size-3.5" />
           </Button>
         </div>
       )}
-    </div>
+    </Page>
   );
 }

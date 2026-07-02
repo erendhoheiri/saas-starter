@@ -1,10 +1,5 @@
-import { createRootRoute, createRouter, Outlet } from "@tanstack/react-router";
-
-// Root route — exported so child routes can reference it
-export const rootRoute = createRootRoute({
-  component: Outlet,
-});
-
+import { createRouter } from "@tanstack/react-router";
+import { rootRoute } from "@/root-route";
 import { adminLayoutRoute } from "@/routes/_admin";
 import { adminOrgsRoute } from "@/routes/_admin.orgs";
 import { adminUsersRoute } from "@/routes/_admin.users";
@@ -14,7 +9,6 @@ import { orgRoute } from "@/routes/_app.org";
 import { settingsRoute } from "@/routes/_app.settings";
 import { forbiddenRoute } from "@/routes/403";
 import { forgotPasswordRoute } from "@/routes/forgot-password";
-// Import routes after rootRoute is defined to avoid circular dependency issues
 import { indexRoute } from "@/routes/index";
 import { loginRoute } from "@/routes/login";
 import { resetPasswordRoute } from "@/routes/reset-password";

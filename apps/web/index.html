@@ -3,7 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A production-ready SaaS starter — authentication, organizations, and admin, ready to build on."
+    />
     <title>SaaS Starter</title>
+
+    <!-- Geist — crisp technical sans + mono. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Apply the persisted theme before first paint to prevent a flash of the
+         wrong theme (FOUC). Mirrors the logic in ThemeProvider. -->
+    <script>
+      (() => {
+        try {
+          const stored = localStorage.getItem("theme") || "system";
+          const prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          const resolved =
+            stored === "system" ? (prefersDark ? "dark" : "light") : stored;
+          if (resolved === "dark") {
+            document.documentElement.classList.add("dark");
+          }
+        } catch {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

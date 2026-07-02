@@ -1,4 +1,9 @@
 @theme {
+  /* Typography — Geist gives a crisp, technical character (Vercel/Linear family)
+     without the ubiquity of Inter. Loaded via <link> in index.html. */
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
   /* Primitives — raw scales, never used directly in components */
   --color-slate-50: oklch(0.984 0.003 247.858);
   --color-slate-100: oklch(0.968 0.007 247.896);
@@ -24,7 +29,11 @@
   --color-indigo-900: oklch(0.359 0.144 278.697);
   --color-indigo-950: oklch(0.257 0.09 281.288);
 
-  /* Semantic tokens — light mode defaults */
+  /* ---------------------------------------------------------------------
+     Semantic tokens — light mode defaults.
+     Aesthetic: refined "borders over shadows". A near-white canvas, white
+     cards defined by hairline borders, a single saturated indigo accent.
+     --------------------------------------------------------------------- */
   --color-background: oklch(1 0 0);
   --color-foreground: var(--color-slate-950);
 
@@ -34,59 +43,117 @@
   --color-popover: oklch(1 0 0);
   --color-popover-foreground: var(--color-slate-950);
 
-  --color-primary: var(--color-indigo-500);
+  /* Single accent — the only chromatic color in the neutral field. */
+  --color-primary: var(--color-indigo-600);
   --color-primary-foreground: oklch(1 0 0);
 
-  --color-secondary: var(--color-slate-200);
-  --color-secondary-foreground: var(--color-slate-800);
+  --color-secondary: var(--color-slate-100);
+  --color-secondary-foreground: var(--color-slate-900);
 
-  --color-muted: var(--color-slate-200);
+  /* muted = the app canvas + recessed inset panels. */
+  --color-muted: var(--color-slate-50);
   --color-muted-foreground: var(--color-slate-600);
 
-  --color-accent: var(--color-indigo-50);
-  --color-accent-foreground: var(--color-indigo-900);
+  /* accent = neutral interactive surfaces (hovers, focused menu items). */
+  --color-accent: var(--color-slate-100);
+  --color-accent-foreground: var(--color-slate-900);
 
   --color-destructive: oklch(0.577 0.245 27.325); /* red-500 */
   --color-destructive-foreground: oklch(1 0 0);
 
-  --color-success: oklch(0.527 0.154 150.069); /* green-500 */
+  --color-success: oklch(0.527 0.154 150.069); /* green-600 */
   --color-success-foreground: oklch(1 0 0);
 
   --color-warning: oklch(0.795 0.184 86.047); /* amber-400 */
   --color-warning-foreground: oklch(0.25 0.05 80);
 
-  --color-border: var(--color-slate-300);
-  --color-input: var(--color-slate-300);
-  --color-ring: var(--color-primary);
+  --color-border: var(--color-slate-200);
+  --color-input: var(--color-slate-200);
+  --color-ring: var(--color-indigo-600);
 
-  /* Shape */
+  /* Shape — tight radii read as "technical/precise". */
   --radius: 0.5rem;
-  --radius-sm: calc(var(--radius) - 2px);
-  --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 4px);
-  --radius-xl: calc(var(--radius) + 8px);
+  --radius-sm: calc(var(--radius) - 3px);
+  --radius-md: calc(var(--radius) - 1px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Dark mode — only semantic tokens flip */
+/* ---------------------------------------------------------------------
+   Dark mode — near-black neutral canvas (not navy), slightly elevated
+   cards, subtle borders, a brighter indigo so the accent still sings.
+   Only semantic tokens flip.
+   --------------------------------------------------------------------- */
 .dark {
   --color-background: var(--color-slate-950);
   --color-foreground: var(--color-slate-50);
 
-  --color-card: var(--color-slate-800);
+  --color-card: var(--color-slate-900);
   --color-card-foreground: var(--color-slate-50);
 
-  --color-popover: var(--color-slate-800);
+  --color-popover: var(--color-slate-900);
   --color-popover-foreground: var(--color-slate-50);
 
-  --color-secondary: var(--color-slate-700);
+  --color-primary: var(--color-indigo-500);
+  --color-primary-foreground: oklch(1 0 0);
+
+  --color-secondary: var(--color-slate-800);
   --color-secondary-foreground: var(--color-slate-50);
 
-  --color-muted: var(--color-slate-900);
+  --color-muted: var(--color-slate-950);
   --color-muted-foreground: var(--color-slate-400);
 
-  --color-accent: var(--color-indigo-950);
-  --color-accent-foreground: var(--color-indigo-200);
+  --color-accent: var(--color-slate-800);
+  --color-accent-foreground: var(--color-slate-50);
 
-  --color-border: var(--color-slate-600);
-  --color-input: var(--color-slate-600);
+  --color-border: var(--color-slate-800);
+  --color-input: var(--color-slate-800);
+  --color-ring: var(--color-indigo-500);
+}
+
+/* ---------------------------------------------------------------------
+   Base layer — global element defaults so the aesthetic is consistent
+   even outside component classes.
+   --------------------------------------------------------------------- */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  /* Tighter tracking on headings — a hallmark of the refined SaaS look. */
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background-color: color-mix(
+      in oklch,
+      var(--color-primary) 25%,
+      transparent
+    );
+  }
+}
+
+/* Faint dotted-grid atmosphere for full-bleed marketing/auth surfaces.
+   Applied via the .bg-grid utility so it never leaks into dense app views. */
+.bg-grid {
+  background-image: radial-gradient(
+    color-mix(in oklch, var(--color-foreground) 7%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+  background-position: -1px -1px;
 }

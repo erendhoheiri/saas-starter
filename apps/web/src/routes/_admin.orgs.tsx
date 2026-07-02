@@ -19,8 +19,11 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { api as _api } from "@/lib/api";
+import { useState } from "react";
+import { Page, PageHeader } from "@/components/page";
+import { useDebounce } from "@/hooks/useDebounce";
+import { api } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import { adminLayoutRoute } from "@/routes/_admin";
 
 export const adminOrgsRoute = createRoute({
@@ -37,20 +40,12 @@ type AdminOrg = {
   createdAt: string | Date;
 };
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
+const COLUMNS = ["Name", "Slug", "Created", "Status"];
 
 function AdminOrgsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 300);
-  const api = _api as any;
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-orgs", debouncedSearch, page],
@@ -62,12 +57,12 @@ function AdminOrgsPage() {
           limit: "20",
         },
       });
-      return res.json() as Promise<{
+      return (await res.json()) as {
         data: AdminOrg[];
         total: number;
         page: number;
         limit: number;
-      }>;
+      };
     },
   });
 
@@ -77,27 +72,25 @@ function AdminOrgsPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-          <Building2 className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Organizations</h1>
-          <p className="text-sm text-muted-foreground">Manage organizations</p>
-        </div>
-      </div>
-      <div className="mb-4 flex items-center gap-2">
-        <div className="relative max-w-sm w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+    <Page>
+      <PageHeader
+        icon={Building2}
+        title="Organizations"
+        description="Manage organizations across the platform"
+      />
+
+      <div className="mb-4 flex items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name or slug..."
+            aria-label="Search organizations"
+            placeholder="Search by name or slug…"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="pl-10"
+            className="pl-9"
           />
         </div>
         {total > 0 && (
@@ -107,83 +100,69 @@ function AdminOrgsPage() {
         )}
       </div>
 
-      {isLoading ? (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Deleted</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={Math.random()}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-32" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-20" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-16" />
-                  </TableCell>
-                </TableRow>
+      <div className="overflow-hidden rounded-lg border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              {COLUMNS.map((c) => (
+                <TableHead key={c}>{c}</TableHead>
               ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : orgs.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center">
-          <Building2 className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground">
-            No organizations found.
-          </p>
-        </div>
-      ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
-            <TableHeader>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton rows
+                <TableRow key={`skeleton-${i}`}>
+                  {COLUMNS.map((c) => (
+                    <TableCell key={c}>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : orgs.length === 0 ? (
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Deleted</TableHead>
+                <TableCell
+                  colSpan={COLUMNS.length}
+                  className="py-12 text-center"
+                >
+                  <Building2 className="mx-auto mb-3 size-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    No organizations found.
+                  </p>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orgs.map((org) => (
+            ) : (
+              orgs.map((org) => (
                 <TableRow key={org.id}>
-                  <TableCell className="text-foreground font-medium">
+                  <TableCell className="font-medium text-foreground">
                     {org.name}
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-foreground">
-                    {org.slug}
+                  <TableCell>
+                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+                      {org.slug}
+                    </code>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(org.createdAt).toLocaleDateString()}
+                    {formatDate(org.createdAt)}
                   </TableCell>
                   <TableCell>
                     {org.deletedAt ? (
                       <Badge variant="destructive">
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        {new Date(org.deletedAt).toLocaleDateString()}
+                        <Trash2 />
+                        Deleted {formatDate(org.deletedAt)}
                       </Badge>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <Badge variant="success">Active</Badge>
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-center gap-2">
@@ -192,12 +171,11 @@ function AdminOrgsPage() {
             size="sm"
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
-            className="gap-1.5"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="size-3.5" />
             Previous
           </Button>
-          <span className="text-sm text-muted-foreground">
+          <span className="px-2 text-sm text-muted-foreground">
             Page {page} of {totalPages}
           </span>
           <Button
@@ -205,13 +183,12 @@ function AdminOrgsPage() {
             size="sm"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="gap-1.5"
           >
             Next
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="size-3.5" />
           </Button>
         </div>
       )}
-    </div>
+    </Page>
   );
 }

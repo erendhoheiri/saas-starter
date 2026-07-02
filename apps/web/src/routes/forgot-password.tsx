@@ -3,18 +3,20 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  Input,
-  Label,
+  Form,
 } from "@starter/ui";
 import { createRoute, Link } from "@tanstack/react-router";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, MailCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { AuthLayout } from "@/components/auth-layout";
+import { TextField } from "@/components/fields";
+import { FormError } from "@/components/form-error";
 import { authClient } from "@/lib/auth";
-import { rootRoute } from "@/router";
+import { rootRoute } from "@/root-route";
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email(),
@@ -29,14 +31,15 @@ export const forgotPasswordRoute = createRoute({
 });
 
 function ForgotPasswordPage() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
-    setError,
-  } = useForm<ForgotPasswordForm>({
+  const form = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: "" },
   });
+  const {
+    handleSubmit,
+    setError,
+    formState: { isSubmitting, isSubmitSuccessful },
+  } = form;
 
   const onSubmit = async (data: ForgotPasswordForm) => {
     const result = await authClient.requestPasswordReset({
@@ -52,24 +55,22 @@ function ForgotPasswordPage() {
 
   if (isSubmitSuccessful) {
     return (
-      <AuthLayout>
-        <Card className="w-full border-primary p-6 max-w-md">
-          <CardHeader>
-            <CardTitle>Check your email</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              If an account exists for that email address, we&apos;ve sent a
-              password reset link.
-            </p>
-            <p className="text-center text-sm">
-              <Link
-                to="/login"
-                className="text-primary underline-offset-4 hover:underline font-medium"
-              >
-                Back to sign in
-              </Link>
-            </p>
+      <AuthLayout subtitle="Reset your password">
+        <Card>
+          <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
+            <div className="flex size-11 items-center justify-center rounded-full bg-success/10 text-success">
+              <MailCheck className="size-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">Check your email</p>
+              <p className="text-sm text-muted-foreground">
+                If an account exists for that address, we&apos;ve sent a
+                password reset link.
+              </p>
+            </div>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/login">Back to sign in</Link>
+            </Button>
           </CardContent>
         </Card>
       </AuthLayout>
@@ -77,53 +78,37 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <AuthLayout>
-      <Card className="w-full border-primary p-6 max-w-md">
+    <AuthLayout subtitle="Reset your password">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-primary font-semibold">
-            Forgot password
-          </CardTitle>
+          <CardTitle className="text-base">Forgot password</CardTitle>
+          <CardDescription>
+            Enter your email and we&apos;ll send you a reset link.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Enter your email address and we&apos;ll send you a link to reset
-            your password.
-          </p>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div className="space-y-2.5">
-              <Label htmlFor="forgot-email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="forgot-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  {...register("email")}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-destructive text-sm">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-            {errors.root && (
-              <div className="rounded-md bg-destructive/10 p-3">
-                <p className="text-destructive text-sm">
-                  {errors.root.message}
-                </p>
-              </div>
-            )}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Sending..." : "Send reset link"}
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-sm">
+          <Form {...form}>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <TextField
+                control={form.control}
+                name="email"
+                label="Email"
+                type="email"
+                icon={Mail}
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
+              <FormError message={form.formState.errors.root?.message} />
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+                {isSubmitting ? "Sending…" : "Send reset link"}
+              </Button>
+            </form>
+          </Form>
+          <p className="mt-6 text-center text-sm">
             <Link
               to="/login"
-              className="text-primary underline-offset-4 hover:underline font-medium"
+              className="font-medium text-primary underline-offset-4 hover:underline"
             >
               Back to sign in
             </Link>

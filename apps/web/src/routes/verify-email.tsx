@@ -1,17 +1,11 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@starter/ui";
+import { Button, Card, CardContent } from "@starter/ui";
 import { createRoute, Link, useSearch } from "@tanstack/react-router";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { AuthLayout } from "@/components/auth-layout";
 import { authClient } from "@/lib/auth";
-import { rootRoute } from "@/router";
+import { rootRoute } from "@/root-route";
 
 export const verifyEmailRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -20,85 +14,88 @@ export const verifyEmailRoute = createRoute({
   component: VerifyEmailPage,
 });
 
-type VerifyStatus = "idle" | "verifying" | "success" | "error";
+type VerifyStatus = "verifying" | "success" | "error";
 
 function VerifyEmailPage() {
   const { token } = useSearch({ from: "/verify-email" });
-  const [status, setStatus] = useState<VerifyStatus>("idle");
+  const [status, setStatus] = useState<VerifyStatus>("verifying");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!token) {
       setStatus("error");
       setErrorMessage("Invalid or missing verification token.");
       return;
     }
 
+    // Reset while (re)verifying so a changed token doesn't show stale state.
     setStatus("verifying");
-    authClient
-      .verifyEmail({ query: { token } })
-      .then((result) => {
+    setErrorMessage(null);
+
+    (async () => {
+      try {
+        const result = await authClient.verifyEmail({ query: { token } });
+        if (cancelled) return;
         if (result.error) {
           setStatus("error");
           setErrorMessage(result.error.message ?? "Email verification failed.");
         } else {
           setStatus("success");
         }
-      })
-      .catch(() => {
+      } catch {
+        if (cancelled) return;
         setStatus("error");
         setErrorMessage("An unexpected error occurred.");
-      });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   return (
-    <AuthLayout>
-      <Card className="w-full border-primary p-6 max-w-md">
-        <CardHeader>
-          <CardTitle>Email verification</CardTitle>
-          <CardDescription>
-            {status === "verifying"
-              ? "Checking your verification token..."
-              : status === "success"
-                ? "All done!"
-                : "Something went wrong"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {status === "idle" || status === "verifying" ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-              <span>Verifying your email address...</span>
+    <AuthLayout subtitle="Verify your email">
+      <Card>
+        <CardContent className="py-8" aria-live="polite">
+          {status === "verifying" ? (
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Verifying your email address…
+              </p>
             </div>
           ) : status === "success" ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-success">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>Your email has been verified successfully.</span>
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="flex size-11 items-center justify-center rounded-full bg-success/10 text-success">
+                <CheckCircle2 className="size-5" />
               </div>
-              <p className="text-center text-sm text-muted-foreground">
-                <Link
-                  to="/login"
-                  className="text-primary underline-offset-4 hover:underline font-medium"
-                >
-                  Sign in to continue
-                </Link>
-              </p>
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">Email verified</p>
+                <p className="text-sm text-muted-foreground">
+                  Your email address has been confirmed.
+                </p>
+              </div>
+              <Button asChild className="w-full">
+                <Link to="/login">Sign in to continue</Link>
+              </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{errorMessage}</span>
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="flex size-11 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <ShieldAlert className="size-5" />
               </div>
-              <p className="text-center text-sm text-muted-foreground">
-                <Link
-                  to="/login"
-                  className="text-primary underline-offset-4 hover:underline font-medium"
-                >
-                  Back to sign in
-                </Link>
-              </p>
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">
+                  Verification failed
+                </p>
+                <p className="text-sm text-muted-foreground">{errorMessage}</p>
+              </div>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/login">Back to sign in</Link>
+              </Button>
             </div>
           )}
         </CardContent>

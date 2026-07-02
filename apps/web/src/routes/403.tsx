@@ -1,6 +1,7 @@
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@starter/ui";
+import { Button } from "@starter/ui";
 import { createRoute, Link } from "@tanstack/react-router";
-import { rootRoute } from "@/router";
+import { Lock } from "lucide-react";
+import { rootRoute } from "@/root-route";
 
 export const forbiddenRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -10,20 +11,25 @@ export const forbiddenRoute = createRoute({
 
 function ForbiddenPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-8 bg-muted">
-      <Card className="w-full max-w-sm text-center">
-        <CardHeader>
-          <CardTitle className="text-5xl font-bold">403</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">
-            You don't have permission to access this page.
-          </p>
-          <Button asChild>
-            <Link to="/dashboard">Go to Dashboard</Link>
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="bg-grid flex min-h-screen flex-col items-center justify-center gap-6 bg-muted px-6 text-center">
+      <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground shadow-xs">
+        <Lock className="size-6" />
+      </div>
+      <div className="space-y-2">
+        <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
+          Error 403
+        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Access denied
+        </h1>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          You don&apos;t have permission to view this page. If you think this is
+          a mistake, contact an administrator.
+        </p>
+      </div>
+      <Button asChild>
+        <Link to="/dashboard">Back to dashboard</Link>
+      </Button>
     </div>
   );
 }

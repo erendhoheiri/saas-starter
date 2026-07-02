@@ -6,17 +6,17 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
-  Label,
+  Form,
 } from "@starter/ui";
-import { createRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
-import { useState } from "react";
+import { createRoute, Link, useSearch } from "@tanstack/react-router";
+import { Loader2, Lock, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { AuthLayout } from "@/components/auth-layout";
+import { PasswordField, TextField } from "@/components/fields";
+import { FormError } from "@/components/form-error";
 import { signIn } from "@/lib/auth";
-import { rootRoute } from "@/router";
+import { rootRoute } from "@/root-route";
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -28,20 +28,21 @@ export type LoginForm = z.infer<typeof loginSchema>;
 export const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
+  validateSearch: z.object({ redirect: z.string().optional() }),
   component: LoginPage,
 });
 
 function LoginPage() {
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setError,
-  } = useForm<LoginForm>({
+  const { redirect } = useSearch({ from: "/login" });
+  const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
   });
+  const {
+    handleSubmit,
+    setError,
+    formState: { isSubmitting },
+  } = form;
 
   const onSubmit = async (data: LoginForm) => {
     const result = await signIn.email({
@@ -52,103 +53,63 @@ function LoginPage() {
       setError("root", { message: result.error.message ?? "Sign in failed" });
       return;
     }
-    navigate({ to: "/dashboard" });
+    // Full navigation ensures the new session is picked up by route guards,
+    // and honours the ?redirect= set when an unauthenticated user was bounced.
+    window.location.href = redirect ?? "/dashboard";
   };
 
   return (
-    <AuthLayout>
-      <Card className="w-full border-primary p-6 max-w-md">
+    <AuthLayout subtitle="Sign in to your workspace">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-primary font-semibold">
-            Sign in
-          </CardTitle>
-          <CardDescription>
-            Enter your email and password to continue
-          </CardDescription>
+          <CardTitle className="text-base">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to continue</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Email */}
-            <div className="space-y-2.5">
-              <Label htmlFor="login-email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  {...register("email")}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-destructive text-sm">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="login-password">Password</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-primary transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="login-password"
-                  type={showPassword ? "text" : "password"}
+          <Form {...form}>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <TextField
+                control={form.control}
+                name="email"
+                label="Email"
+                type="email"
+                icon={Mail}
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
+              <div className="space-y-1.5">
+                <PasswordField
+                  control={form.control}
+                  name="password"
+                  label="Password"
+                  icon={Lock}
                   placeholder="Enter your password"
-                  className="pl-10 pr-10"
-                  {...register("password")}
+                  autoComplete="current-password"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
+                <div className="flex justify-end">
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
-              {errors.password && (
-                <p className="text-destructive text-sm">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
 
-            {/* Root error */}
-            {errors.root && (
-              <div className="rounded-md bg-destructive/10 p-3">
-                <p className="text-destructive text-sm">
-                  {errors.root.message}
-                </p>
-              </div>
-            )}
+              <FormError message={form.formState.errors.root?.message} />
 
-            {/* Submit */}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+                {isSubmitting ? "Signing in…" : "Sign in"}
+              </Button>
+            </form>
+          </Form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link
               to="/signup"
-              className="text-primary underline-offset-4 hover:underline font-medium"
+              className="font-medium text-primary underline-offset-4 hover:underline"
             >
               Sign up
             </Link>

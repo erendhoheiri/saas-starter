@@ -1,24 +1,37 @@
 import { useQuery } from "@tanstack/react-query";
-import { authClient, useSession } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { authClient } from "@/lib/auth";
 
+export interface Org {
+  id: string;
+  name: string;
+  slug?: string;
+}
+
+/** The user's organizations (Better Auth `organization.list`). */
+export function useOrgs() {
+  return useQuery({
+    queryKey: ["my-orgs"],
+    queryFn: async (): Promise<Org[]> => {
+      const result = await authClient.organization.list();
+      const data = result.data;
+      return Array.isArray(data) ? (data as Org[]) : [];
+    },
+  });
+}
+
+/** The currently active organization, resolved from the session. */
 export function useOrg() {
-  const { data: session } = useSession();
-  // biome-ignore lint/suspicious/noExplicitAny: intentional
-  const activeOrgId = (session as any)?.session?.activeOrganizationId as
-    | string
-    | undefined;
+  const { activeOrganizationId } = useAuth();
+  const { data: orgs } = useOrgs();
 
   return useQuery({
-    queryKey: ["org", activeOrgId],
-    queryFn: async () => {
-      if (!activeOrgId) return null;
-      // Fetch all orgs and find the active one.
-      // TODO: replace with direct GET /organizations/:orgId once that endpoint exists.
-      // authClient.organization.list() maps to /organization/list (Better Auth path-to-object).
-      const result = await (authClient.organization as any).list();
-      const orgs: any[] = result.data ?? [];
-      return orgs.find((o: any) => o.id === activeOrgId) ?? null;
+    queryKey: ["org", activeOrganizationId],
+    queryFn: async (): Promise<Org | null> => {
+      if (!activeOrganizationId) return null;
+      const list = orgs ?? (await authClient.organization.list()).data ?? [];
+      return (list as Org[]).find((o) => o.id === activeOrganizationId) ?? null;
     },
-    enabled: !!activeOrgId,
+    enabled: !!activeOrganizationId,
   });
 }

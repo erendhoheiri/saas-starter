@@ -2,7 +2,7 @@ import { createRoute, Outlet, redirect } from "@tanstack/react-router";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { authClient } from "@/lib/auth";
-import { rootRoute } from "@/router";
+import { rootRoute } from "@/root-route";
 
 export const adminLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,

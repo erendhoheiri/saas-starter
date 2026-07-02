@@ -6,8 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
-  Label,
+  Form,
 } from "@starter/ui";
 import {
   createRoute,
@@ -15,13 +14,14 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Lock, ShieldAlert } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { AuthLayout } from "@/components/auth-layout";
+import { PasswordField } from "@/components/fields";
+import { FormError } from "@/components/form-error";
 import { authClient } from "@/lib/auth";
-import { rootRoute } from "@/router";
+import { rootRoute } from "@/root-route";
 
 export const resetPasswordSchema = z
   .object({
@@ -45,16 +45,15 @@ export const resetPasswordRoute = createRoute({
 function ResetPasswordPage() {
   const navigate = useNavigate();
   const { token } = useSearch({ from: "/reset-password" });
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setError,
-  } = useForm<ResetPasswordForm>({
+  const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { newPassword: "", confirmPassword: "" },
   });
+  const {
+    handleSubmit,
+    setError,
+    formState: { isSubmitting },
+  } = form;
 
   const onSubmit = async (data: ResetPasswordForm) => {
     if (!token) {
@@ -76,23 +75,21 @@ function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <AuthLayout>
-        <Card className="w-full border-primary p-6 max-w-md">
-          <CardHeader>
-            <CardTitle>Invalid link</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              This password reset link is invalid or has expired.
-            </p>
-            <p className="text-center text-sm">
-              <Link
-                to="/forgot-password"
-                className="text-primary underline-offset-4 hover:underline font-medium"
-              >
-                Request a new link
-              </Link>
-            </p>
+      <AuthLayout subtitle="Reset your password">
+        <Card>
+          <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
+            <div className="flex size-11 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <ShieldAlert className="size-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">Invalid link</p>
+              <p className="text-sm text-muted-foreground">
+                This password reset link is invalid or has expired.
+              </p>
+            </div>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/forgot-password">Request a new link</Link>
+            </Button>
           </CardContent>
         </Card>
       </AuthLayout>
@@ -100,92 +97,38 @@ function ResetPasswordPage() {
   }
 
   return (
-    <AuthLayout>
-      <Card className="w-full border-primary p-6 max-w-md">
+    <AuthLayout subtitle="Reset your password">
+      <Card>
         <CardHeader>
-          <CardTitle>Reset password</CardTitle>
+          <CardTitle className="text-base">Reset password</CardTitle>
           <CardDescription>Enter your new password below.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* New password */}
-            <div className="space-y-2.5">
-              <Label htmlFor="reset-new-password">New password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="reset-new-password"
-                  type={showNewPassword ? "text" : "password"}
-                  placeholder="At least 8 characters"
-                  className="pl-10 pr-10"
-                  {...register("newPassword")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  tabIndex={-1}
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              {errors.newPassword && (
-                <p className="text-destructive text-sm">
-                  {errors.newPassword.message}
-                </p>
-              )}
-            </div>
-
-            {/* Confirm password */}
-            <div className="space-y-2.5">
-              <Label htmlFor="reset-confirm-password">Confirm password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="reset-confirm-password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Repeat your password"
-                  className="pl-10 pr-10"
-                  {...register("confirmPassword")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  tabIndex={-1}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-destructive text-sm">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
-
-            {/* Root error */}
-            {errors.root && (
-              <div className="rounded-md bg-destructive/10 p-3">
-                <p className="text-destructive text-sm">
-                  {errors.root.message}
-                </p>
-              </div>
-            )}
-
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Resetting..." : "Reset password"}
-            </Button>
-          </form>
+          <Form {...form}>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <PasswordField
+                control={form.control}
+                name="newPassword"
+                label="New password"
+                icon={Lock}
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
+              />
+              <PasswordField
+                control={form.control}
+                name="confirmPassword"
+                label="Confirm password"
+                icon={Lock}
+                placeholder="Repeat your password"
+                autoComplete="new-password"
+              />
+              <FormError message={form.formState.errors.root?.message} />
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+                {isSubmitting ? "Resetting…" : "Reset password"}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </AuthLayout>

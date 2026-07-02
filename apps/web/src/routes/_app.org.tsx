@@ -1,12 +1,3 @@
-import { createRoute, useNavigate } from "@tanstack/react-router";
-import { api as _api } from "@/lib/api";
-import { authClient, useSession } from "@/lib/auth";
-import { appLayoutRoute } from "@/routes/_app";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// biome-ignore lint/suspicious/noExplicitAny: intentional
-const api = _api as any;
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Badge,
@@ -19,8 +10,15 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
   Input,
   Label,
   Select,
@@ -28,46 +26,37 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  toast,
 } from "@starter/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { createRoute, useNavigate } from "@tanstack/react-router";
 import {
   Building2,
   Loader2,
   Mail,
-  MailPlus,
   Trash2,
   UserMinus,
   UserPlus,
   Users,
 } from "lucide-react";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { TextField } from "@/components/fields";
+import { Page, PageHeader } from "@/components/page";
+import { UserAvatar } from "@/components/user-avatar";
+import { useAuth } from "@/hooks/useAuth";
 import { useOrg } from "@/hooks/useOrg";
+import { api } from "@/lib/api";
+import { authClient } from "@/lib/auth";
 import { queryClient } from "@/lib/query";
+import { appLayoutRoute } from "@/routes/_app";
 
 export const orgRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/org",
   component: OrgPage,
 });
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-// ---------------------------------------------------------------------------
-// Schemas
-// ---------------------------------------------------------------------------
 
 export const inviteSchema = z.object({
   email: z.string().email("Valid email required"),
@@ -80,66 +69,47 @@ const updateOrgSchema = z.object({
 });
 type UpdateOrgForm = z.infer<typeof updateOrgSchema>;
 
-const deleteOrgSchema = z.object({
-  confirm: z.string().refine((v) => v === "delete organization", {
-    message: 'Type "delete organization" to confirm',
-  }),
-});
-type DeleteOrgForm = { confirm: string };
+interface Member {
+  id: string;
+  userId: string;
+  role: string;
+  user: { name: string; email: string };
+}
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+const DELETE_PHRASE = "delete organization";
 
 function OrgPage() {
   const navigate = useNavigate();
-  const { data: session } = useSession();
-  const currentUserId = (session as any)?.user?.id as string | undefined;
-
+  const { user } = useAuth();
   const { data: activeOrg } = useOrg();
-  const orgId = activeOrg?.id as string | undefined;
+  const orgId = activeOrg?.id;
 
-  const [deleteOrgOpen, setDeleteOrgOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
 
-  // ---- Members query ----
   const { data: membersData } = useQuery({
     queryKey: ["org", "members", orgId],
     queryFn: async () => {
-      const result = await (authClient.organization as any).getFullOrganization(
-        {
-          query: { organizationId: orgId },
-        },
-      );
-      return result.data as {
-        id: string;
-        name: string;
-        members: Array<{
-          id: string;
-          userId: string;
-          role: string;
-          user: { name: string; email: string };
-        }>;
-      } | null;
+      const result = await authClient.organization.getFullOrganization({
+        query: { organizationId: orgId },
+      });
+      return (result.data ?? null) as { members: Member[] } | null;
     },
     enabled: !!orgId,
   });
 
   const members = membersData?.members ?? [];
-  const currentMember = members.find((m) => m.userId === currentUserId);
-  const currentRole = currentMember?.role ?? null;
+  const currentRole = members.find((m) => m.userId === user?.id)?.role ?? null;
   const canManage = currentRole === "owner" || currentRole === "admin";
+  const isOwner = currentRole === "owner";
+
+  const invalidateMembers = () =>
+    queryClient.invalidateQueries({ queryKey: ["org", "members", orgId] });
 
   // ---- Invite member ----
-  const {
-    register: registerInvite,
-    handleSubmit: handleInviteSubmit,
-    control: inviteControl,
-    formState: { errors: inviteErrors, isSubmitting: inviteSubmitting },
-    reset: resetInvite,
-    setError: setInviteError,
-  } = useForm<InviteForm>({
+  const inviteForm = useForm<InviteForm>({
     resolver: zodResolver(inviteSchema),
-    defaultValues: { role: "member" },
+    defaultValues: { email: "", role: "member" },
   });
 
   const inviteMutation = useMutation({
@@ -148,27 +118,22 @@ function OrgPage() {
         json: { email: data.email, role: data.role, organizationId: orgId },
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error((body as any).error ?? "Invite failed");
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? "Invite failed");
       }
       return res.json();
     },
     onSuccess: () => {
-      resetInvite();
-      queryClient.invalidateQueries({ queryKey: ["org", "members", orgId] });
+      inviteForm.reset();
+      invalidateMembers();
+      toast.success("Invitation sent");
     },
+    onError: (e) =>
+      inviteForm.setError("root", { message: (e as Error).message }),
   });
 
-  const onInviteSubmit = async (data: InviteForm) => {
-    try {
-      await inviteMutation.mutateAsync(data);
-    } catch (e) {
-      setInviteError("root", { message: (e as Error).message });
-    }
-  };
-
-  // ---- Change role ----
-  const changeRoleMutation = useMutation({
+  // ---- Change role / remove ----
+  const changeRole = useMutation({
     mutationFn: async ({
       memberId,
       role,
@@ -183,12 +148,13 @@ function OrgPage() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["org", "members", orgId] });
+      invalidateMembers();
+      toast.success("Role updated");
     },
+    onError: () => toast.error("Failed to change role"),
   });
 
-  // ---- Remove member ----
-  const removeMemberMutation = useMutation({
+  const removeMember = useMutation({
     mutationFn: async (memberIdOrEmail: string) => {
       const res = await api.api.organizations.members.remove.$post({
         json: { memberIdOrEmail, organizationId: orgId },
@@ -197,24 +163,21 @@ function OrgPage() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["org", "members", orgId] });
+      invalidateMembers();
+      toast.success("Member removed");
     },
+    onError: () => toast.error("Failed to remove member"),
   });
 
   // ---- Update org name ----
-  const {
-    register: registerOrg,
-    handleSubmit: handleOrgSubmit,
-    formState: { errors: orgErrors, isSubmitting: orgSubmitting },
-    setError: setOrgError,
-  } = useForm<UpdateOrgForm>({
+  const orgForm = useForm<UpdateOrgForm>({
     resolver: zodResolver(updateOrgSchema),
     values: { name: activeOrg?.name ?? "" },
   });
 
-  const updateOrgMutation = useMutation({
+  const updateOrg = useMutation({
     mutationFn: async (data: UpdateOrgForm) => {
-      const result = await (authClient.organization as any).update({
+      const result = await authClient.organization.update({
         organizationId: orgId,
         data: { name: data.name },
       });
@@ -223,137 +186,104 @@ function OrgPage() {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["org", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["org"] });
+      queryClient.invalidateQueries({ queryKey: ["my-orgs"] });
+      toast.success("Organization updated");
     },
+    onError: (e) => orgForm.setError("root", { message: (e as Error).message }),
   });
-
-  const onOrgSubmit = async (data: UpdateOrgForm) => {
-    try {
-      await updateOrgMutation.mutateAsync(data);
-    } catch (e) {
-      setOrgError("root", { message: (e as Error).message });
-    }
-  };
 
   // ---- Delete org ----
-  const {
-    register: registerDeleteOrg,
-    handleSubmit: handleDeleteOrgSubmit,
-    formState: { errors: deleteOrgErrors, isSubmitting: deleteOrgSubmitting },
-    reset: resetDeleteOrg,
-  } = useForm<DeleteOrgForm>({
-    resolver: zodResolver(deleteOrgSchema),
-  });
-
-  const deleteOrgMutation = useMutation({
+  const deleteOrg = useMutation({
     mutationFn: async () => {
       if (!orgId) throw new Error("No active org");
       const res = await api.api.account.orgs[":orgId"].$delete({
         param: { orgId },
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error((body as any).error ?? "Failed to delete organization");
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? "Failed to delete organization");
       }
       return res.json();
     },
     onSuccess: () => {
-      setDeleteOrgOpen(false);
-      resetDeleteOrg();
+      setDeleteOpen(false);
+      setConfirmText("");
       queryClient.invalidateQueries();
+      toast.success("Organization deleted");
       navigate({ to: "/dashboard" });
     },
+    onError: (e) => toast.error((e as Error).message),
   });
-
-  const onDeleteOrgSubmit = async () => {
-    try {
-      await deleteOrgMutation.mutateAsync();
-    } catch {
-      // Error is already in deleteOrgMutation.error
-    }
-  };
 
   if (!orgId) {
     return (
-      <div className="p-8 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-foreground mb-6">
-          Organization
-        </h1>
+      <Page size="md">
+        <PageHeader icon={Building2} title="Organization" />
         <Card>
-          <CardContent className="py-12 text-center">
-            <Building2 className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <Building2 className="size-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
               No active organization. Switch to one using the org switcher.
             </p>
           </CardContent>
         </Card>
-      </div>
+      </Page>
     );
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto space-y-6">
-      {/* Org header */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-          <Building2 className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {activeOrg?.name}
-          </h1>
-          <p className="text-sm text-muted-foreground">Organization</p>
-        </div>
-      </div>
+    <Page size="md">
+      <PageHeader
+        icon={Building2}
+        title={activeOrg?.name ?? "Organization"}
+        description={`${members.length} member${members.length === 1 ? "" : "s"}`}
+      />
 
-      {/* Members list */}
+      {/* Members */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-foreground" />
-            <CardTitle className="text-foreground">Members</CardTitle>
+            <Users className="size-4 text-muted-foreground" />
+            <CardTitle>Members</CardTitle>
           </div>
           <CardDescription>People in your organization.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-1">
+        <CardContent className="divide-y divide-border">
           {members.length === 0 && (
-            <p className="text-muted-foreground text-sm">No members found.</p>
+            <p className="py-2 text-sm text-muted-foreground">
+              No members found.
+            </p>
           )}
-          {members.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center justify-between gap-2 py-3 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-border"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">
-                  {m.user?.name ? getInitials(m.user.name) : "?"}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
+          {members.map((m) => {
+            const isSelf = m.userId === user?.id;
+            return (
+              <div key={m.id} className="flex items-center gap-3 py-3">
+                <UserAvatar name={m.user?.name} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
                     {m.user?.name ?? m.userId}
-                    {m.userId === currentUserId && (
-                      <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                    {isSelf && (
+                      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                         (you)
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="truncate text-xs text-muted-foreground">
                     {m.user?.email}
                   </p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Badge variant={m.role === "admin" ? "default" : "secondary"}>
+                <Badge variant={m.role === "owner" ? "default" : "secondary"}>
                   {m.role}
                 </Badge>
-                {canManage && m.userId !== currentUserId && (
-                  <>
+                {canManage && !isSelf && m.role !== "owner" && (
+                  <div className="flex items-center gap-1.5">
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={changeRoleMutation.isPending}
+                      disabled={changeRole.isPending}
                       onClick={() =>
-                        changeRoleMutation.mutate({
+                        changeRole.mutate({
                           memberId: m.id,
                           role: m.role === "member" ? "admin" : "member",
                         })
@@ -363,254 +293,199 @@ function OrgPage() {
                     </Button>
                     <Button
                       size="sm"
-                      variant="destructive"
-                      disabled={removeMemberMutation.isPending}
-                      onClick={() => removeMemberMutation.mutate(m.userId)}
+                      variant="ghost"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      aria-label={`Remove ${m.user?.name ?? "member"}`}
+                      disabled={removeMember.isPending}
+                      onClick={() => removeMember.mutate(m.userId)}
                     >
-                      <UserMinus className="h-3.5 w-3.5 shrink-0" />
-                      Remove
+                      <UserMinus className="size-4" />
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
-      {/* Invite form */}
+      {/* Invite */}
       {canManage && (
-        <Card>
+        <Card className="mt-4">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-foreground" />
-              <CardTitle className="text-foreground">Invite member</CardTitle>
+              <UserPlus className="size-4 text-muted-foreground" />
+              <CardTitle>Invite member</CardTitle>
             </div>
             <CardDescription>Send an invitation by email.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form
-              onSubmit={handleInviteSubmit(onInviteSubmit)}
-              className="space-y-5"
-            >
-              <div className="space-y-2.5">
-                <Label htmlFor="invite-email">Email address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    id="invite-email"
+            <Form {...inviteForm}>
+              <form
+                onSubmit={inviteForm.handleSubmit((d) =>
+                  inviteMutation.mutate(d),
+                )}
+                className="flex flex-col gap-4 sm:flex-row sm:items-start"
+              >
+                <div className="flex-1">
+                  <TextField
+                    control={inviteForm.control}
+                    name="email"
+                    label="Email address"
                     type="email"
+                    icon={Mail}
                     placeholder="colleague@example.com"
-                    className="pl-10"
-                    {...registerInvite("email")}
                   />
                 </div>
-                {inviteErrors.email && (
-                  <p className="text-destructive text-sm">
-                    {inviteErrors.email.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2.5">
-                <Label>Role</Label>
-                <Controller
+                <FormField
+                  control={inviteForm.control}
                   name="role"
-                  control={inviteControl}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="member">Member</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormItem className="sm:w-36">
+                      <FormLabel>Role</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="member">Member</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
                   )}
                 />
-              </div>
-
-              {inviteErrors.root && (
-                <div className="rounded-md bg-destructive/10 p-3">
-                  <p className="text-destructive text-sm">
-                    {inviteErrors.root.message}
-                  </p>
-                </div>
-              )}
-
-              {inviteMutation.isSuccess && (
-                <div className="rounded-md bg-success/10 p-3">
-                  <p className="text-success text-sm">Invitation sent.</p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                variant="default"
-                disabled={inviteSubmitting || inviteMutation.isPending}
-                className="gap-2"
-              >
-                {inviteMutation.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                <MailPlus className="h-4 w-4 shrink-0" />
-                {inviteMutation.isPending ? "Sending..." : "Send invite"}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  disabled={inviteMutation.isPending}
+                  className="sm:mt-[26px]"
+                >
+                  {inviteMutation.isPending && (
+                    <Loader2 className="size-4 animate-spin" />
+                  )}
+                  Send invite
+                </Button>
+              </form>
+            </Form>
+            {inviteForm.formState.errors.root && (
+              <p className="mt-3 text-sm text-destructive">
+                {inviteForm.formState.errors.root.message}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Org settings (owner only) */}
-      {currentRole === "owner" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-foreground" />
-              <CardTitle className="text-foreground">
-                Organization settings
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleOrgSubmit(onOrgSubmit)} className="space-y-5">
-              <div className="space-y-2.5">
-                <Label htmlFor="org-name">Name</Label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    id="org-name"
-                    className="pl-10"
-                    {...registerOrg("name")}
+      {/* Owner settings */}
+      {isOwner && (
+        <>
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Organization settings</CardTitle>
+              <CardDescription>Update your organization name.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...orgForm}>
+                <form
+                  onSubmit={orgForm.handleSubmit((d) => updateOrg.mutate(d))}
+                  className="space-y-4"
+                >
+                  <TextField
+                    control={orgForm.control}
+                    name="name"
+                    label="Name"
+                    icon={Building2}
                     placeholder="Organization name"
                   />
-                </div>
-                {orgErrors.name && (
-                  <p className="text-destructive text-sm mt-1">
-                    {orgErrors.name.message}
-                  </p>
-                )}
+                  <Button type="submit" disabled={updateOrg.isPending}>
+                    {updateOrg.isPending && (
+                      <Loader2 className="size-4 animate-spin" />
+                    )}
+                    Save changes
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4 border-destructive/40">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Trash2 className="size-4 text-destructive" />
+                <CardTitle className="text-destructive">Danger zone</CardTitle>
               </div>
-
-              {orgErrors.root && (
-                <div className="rounded-md bg-destructive/10 p-3">
-                  <p className="text-destructive text-sm">
-                    {orgErrors.root.message}
-                  </p>
-                </div>
-              )}
-
-              {updateOrgMutation.isSuccess && (
-                <div className="rounded-md bg-success/10 p-3">
-                  <p className="text-success text-sm">Organization updated.</p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                variant="default"
-                disabled={orgSubmitting || updateOrgMutation.isPending}
-              >
-                {updateOrgMutation.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                {updateOrgMutation.isPending ? "Saving..." : "Save changes"}
+              <CardDescription>
+                Permanently delete this organization and all its data.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="size-4" />
+                Delete organization
               </Button>
-            </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </>
       )}
 
-      {/* Delete org (owner only) */}
-      {currentRole === "owner" && (
-        <Card className="border-destructive">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Trash2 className="h-4 w-4 text-destructive" />
-              <CardTitle className="text-destructive">Danger zone</CardTitle>
-            </div>
-            <CardDescription>
-              Permanently delete this organization.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="destructive"
-              onClick={() => setDeleteOrgOpen(true)}
-              className="gap-2"
-            >
-              <Trash2 className="h-4 w-4 shrink-0" />
-              Delete organization
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Delete org dialog */}
+      {/* Delete dialog */}
       <Dialog
-        open={deleteOrgOpen}
+        open={deleteOpen}
         onOpenChange={(open) => {
-          setDeleteOrgOpen(open);
-          if (!open) resetDeleteOrg();
+          setDeleteOpen(open);
+          if (!open) setConfirmText("");
         }}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete organization</DialogTitle>
             <DialogDescription>
-              This will permanently delete <strong>{activeOrg?.name}</strong>{" "}
-              and all its data. To confirm, type{" "}
-              <strong>delete organization</strong> below.
+              This permanently deletes <strong>{activeOrg?.name}</strong> and
+              all its data. To confirm, type <strong>{DELETE_PHRASE}</strong>{" "}
+              below.
             </DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={handleDeleteOrgSubmit(onDeleteOrgSubmit)}
-            className="space-y-4"
-          >
+          <div className="space-y-2">
+            <Label htmlFor="confirm-delete-org" className="sr-only">
+              Confirmation phrase
+            </Label>
             <Input
-              {...registerDeleteOrg("confirm")}
-              placeholder="delete organization"
+              id="confirm-delete-org"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={DELETE_PHRASE}
               autoComplete="off"
             />
-            {deleteOrgErrors.confirm && (
-              <p className="text-destructive text-sm">
-                {deleteOrgErrors.confirm.message}
-              </p>
-            )}
-            {deleteOrgMutation.isError && (
-              <p className="text-destructive text-sm">
-                {(deleteOrgMutation.error as Error).message}
-              </p>
-            )}
-            <div className="flex gap-2 justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setDeleteOrgOpen(false);
-                  resetDeleteOrg();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="destructive"
-                disabled={deleteOrgSubmitting || deleteOrgMutation.isPending}
-                className="gap-2"
-              >
-                {deleteOrgMutation.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                {deleteOrgMutation.isPending
-                  ? "Deleting..."
-                  : "Delete organization"}
-              </Button>
-            </div>
-          </form>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteOpen(false);
+                setConfirmText("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={confirmText !== DELETE_PHRASE || deleteOrg.isPending}
+              onClick={() => deleteOrg.mutate()}
+            >
+              {deleteOrg.isPending && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
+              Delete organization
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   );
 }
